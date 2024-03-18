@@ -1,0 +1,15 @@
+{
+	"deno.enable": true,
+	"deno.unstable": true,
+	"files.exclude": {
+		"deno.jsonc": true,
+		"deno.lock": true,
+		"dist": true,
+		"bundle-file.bat": true,
+		"export.zip": true,
+		"run.ts": true,
+		".gitignore": true,
+		"index.html": true,
+		"README.md": true,
+	}
+}

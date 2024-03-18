@@ -1,0 +1,20 @@
+{
+	"tasks": [
+		{
+			// For this to work you need to have installed 7z
+			"label": "Build Kaboom",
+			"type": "shell",
+			"command": "Start-Process bundle-file.bat",
+			"group": {
+				"kind": "build",
+			}
+		},
+		{
+			// For this to work you need to have installed butler in your path
+			// To use this one you don't need to necessarily zip the export folder
+			"label": "Deliver kaboom to Itch.io",
+			"type": "shell",
+			"command": "butler push export amyspark-ng/clickery-hexagon-2:html5 --userversion 1.0",
+		},
+	]
+}
