@@ -1,5 +1,5 @@
-// // <reference types="https://esm.sh/kaboom@3000.1.17/global" />
-import kaboom from "https://esm.sh/kaboom@3000.1.17";
+import kaboom from "kaboom";
+import "kaboom/global";
 
 import { loadAssets } from "./loader.js"
 import { volumeManager } from "./volumebar.js";
