@@ -15,10 +15,12 @@ export let GameState = {
 	cursors: 0,
 	hasUnlockedPowerups: false,
 	ascendLevel: 1,
-	volumeIndex: 10,
+	volumeIndex: 9,
 }
+
+console.log(GameState)
 
 loadAssets()
 
-go("menuscene")
-// go("gamescene")
+// go("menuscene")
+go("gamescene")

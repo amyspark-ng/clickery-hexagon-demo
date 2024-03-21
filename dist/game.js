@@ -4380,92 +4380,6 @@ vec4 frag(vec2 pos, vec2 uv, vec4 color, sampler2D tex) {
     return r.focus !== false && A.canvas.focus(), it;
   }, "default");
 
-  // code/volumebar.js
-  function volumeManager() {
-    let volumeIndex = 9;
-    let barXPosition = -110;
-    let seconds = 0;
-    let tune2 = 0;
-    let bg = add([
-      rect(width() / 6, 80),
-      pos(width() / 2, 0),
-      anchor("top"),
-      color(BLACK),
-      opacity(0),
-      z(999999999)
-    ]);
-    let volumeText = bg.add([
-      text("VOLUME"),
-      pos(0, bg.height - 12),
-      anchor("center"),
-      scale(0.6),
-      opacity(0),
-      z(9999999999)
-    ]);
-    let bars;
-    debug.log(volumeIndex);
-    for (let i = 0; i < 10; i++) {
-      barXPosition += 20;
-      volumeText.add([
-        pos(barXPosition, -65),
-        rect(10, bg.height - 10),
-        opacity(0),
-        anchor("center"),
-        z(99999999999)
-      ]);
-    }
-    bars = volumeText.get("*", { recursive: true });
-    let gameManager = add([stay()]);
-    gameManager.onKeyPress("-", () => {
-      if (volumeIndex > 0) {
-        bars[volumeIndex - 1].opacity = 0.1;
-        volumeIndex--;
-        volume(volumeIndex / 10);
-        tune2 -= 25;
-      }
-      play("volumeChange", { detune: tune2 });
-      seconds = 0;
-      bg.opacity = 0.5;
-      volumeText.opacity = 1;
-      for (let i = 0; i < 10; i++) {
-        bars[i].opacity = 0.1;
-      }
-      for (let i = 0; i < volumeIndex; i++) {
-        bars[i].opacity = 1;
-      }
-    });
-    gameManager.onKeyPress("+", () => {
-      if (volumeIndex <= 9) {
-        bars[volumeIndex].opacity = 1;
-        volumeIndex++;
-        volume(volumeIndex / 10);
-        tune2 += 25;
-      }
-      play("volumeChange", { detune: tune2 });
-      seconds = 0;
-      bg.opacity = 0.5;
-      volumeText.opacity = 1;
-      for (let i = 0; i < 10; i++) {
-        bars[i].opacity = 0.1;
-      }
-      for (let i = 0; i < volumeIndex; i++) {
-        bars[i].opacity = 1;
-      }
-    });
-    gameManager.onUpdate(() => {
-      seconds += dt();
-      if (seconds > 0.8) {
-        bg.opacity = 0;
-        volumeText.opacity = 0;
-        bars.forEach((element) => {
-          element.opacity = 0;
-        });
-      }
-    });
-    return gameManager;
-  }
-  __name(volumeManager, "volumeManager");
-
   // code/dataManaging.js
   function savingData(dataToSave2) {
     setData("hexagon_save", dataToSave2);
@@ -4571,6 +4485,7 @@ vec4 frag(vec2 pos, vec2 uv, vec4 color, sampler2D tex) {
   var OtherPowerUp;
   var powerups = [badPowerUp, MultiplyScoreMultiplier, AddPercentage, OtherPowerUp];
   function definePowerups() {
+    let bg = get("bg")[0];
     badPowerUp = make([
       sprite("hexagon"),
       pos(10, 10),
@@ -4581,7 +4496,6 @@ vec4 frag(vec2 pos, vec2 uv, vec4 color, sampler2D tex) {
       "powerup",
       {
         execute() {
-          let bg = get("bg")[0];
           bg.color = rgb(64, 22, 22);
           debug.log("bad power up :(");
           wait(10, () => {
@@ -4600,7 +4514,6 @@ vec4 frag(vec2 pos, vec2 uv, vec4 color, sampler2D tex) {
       "powerup",
       {
         execute() {
-          let bg = get("bg")[0];
           bg.color = rgb(22, 33, 64);
           debug.log("Multiplies score multiplier by 2 :)");
           GameState.scoreMultiplier = GameState.scoreMultiplier * 2;
@@ -4621,10 +4534,9 @@ vec4 frag(vec2 pos, vec2 uv, vec4 color, sampler2D tex) {
       "powerup",
       {
         execute() {
-          let bg = get("bg")[0];
           bg.color = rgb(22, 64, 25);
-          debug.log("Adds a percentage of your score to it :)");
-          wait(10, () => {
+          tween(GameState.score, GameState.score + GameState.score * 25 / 100, 5, (p) => GameState.score = p);
+          wait(5, () => {
             bg.color = rgb(50, 50, 50);
           });
         }
@@ -4640,7 +4552,6 @@ vec4 frag(vec2 pos, vec2 uv, vec4 color, sampler2D tex) {
       "powerup",
       {
         execute() {
-          let bg = get("bg")[0];
           bg.color = rgb(64, 63, 22);
           debug.log("other power up :)");
           wait(10, () => {
@@ -4696,25 +4607,13 @@ vec4 frag(vec2 pos, vec2 uv, vec4 color, sampler2D tex) {
   var maxScoreText;
   var spsText;
   var multiplierText;
-  var autoScoreText;
+  var cursorsText;
   function gamescene() {
     return scene("gamescene", () => {
-      volumeManager();
-      powerups2 = definePowerups();
-      let gottenData = getData("hexagon_save");
-      if (gottenData) {
-        GameState.score = gottenData._score;
-        GameState.maxScore = gottenData._maxScore;
-        GameState.scoreMultiplier = gottenData._scoreMultiplier;
-        scorePerClick = gottenData._scorePerClick;
-        GameState.cursors = gottenData._cursors;
-        GameState.hasUnlockedPowerups = gottenData._hasUnlockedPowerUps, GameState.volumeIndex = gottenData._volumeIndex;
-        console.log(gottenData);
-      }
+      if (GameState.hasUnlockedPowerups == true)
+        canBuyPowerup = true;
       if (GameState.score > 0)
         hasStartedGame = true;
-      if (GameState.hasUnlockedPowerups)
-        canBuyPowerup = true;
       let bg = add([
         rect(width() * 2, height() * 2),
         pos(center()),
@@ -4723,13 +4622,13 @@ vec4 frag(vec2 pos, vec2 uv, vec4 color, sampler2D tex) {
         anchor("center"),
         "bg"
       ]);
+      powerups2 = definePowerups();
       setCursor("none");
       let mouse = add([
-        sprite("cursor"),
+        sprite("cursors"),
         pos(mousePos()),
         area({ scale: vec2(0.5), offset: vec2(-5, 5) }),
         anchor("center"),
-        scale(0.2),
         z(9999999999),
         opacity(1),
         {
@@ -4742,8 +4641,8 @@ vec4 frag(vec2 pos, vec2 uv, vec4 color, sampler2D tex) {
         sprite("hexagon"),
         pos(width() / 2, height() / 2 + 40),
         anchor("center"),
-        scale(0.22),
-        area({ shape: new Polygon([vec2(406, 118), vec2(613, 116), vec2(711, 292), vec2(615, 463), vec2(411, 466), vec2(315, 293)]), scale: vec2(4.62), offset: vec2(-512, -289) }),
+        scale(1),
+        area({ shape: new Polygon([vec2(406, 118), vec2(613, 116), vec2(711, 292), vec2(615, 463), vec2(411, 466), vec2(315, 293)]), offset: vec2(-512, -289) }),
         rotate(),
         "hexagon",
         {
@@ -4801,22 +4700,22 @@ vec4 frag(vec2 pos, vec2 uv, vec4 color, sampler2D tex) {
                 hasStartedGame = true;
                 bg.color = rgb(50, 50, 50);
               }
-              if (GameState.maxScore == 0)
-                scoreText.opacity = 1;
-              if (GameState.maxScore == 4)
-                tween(multiplierText.opacity, 1, 0.5, (p) => multiplierText.opacity = p);
-              if (GameState.maxScore == 9)
-                tween(spsText.opacity, 1, 0.5, (p) => spsText.opacity = p);
-              if (GameState.maxScore == 24) {
-                tween(store.opacity, 1, 0.5, (p) => store.opacity = p);
-                store.use(area({ scale: vec2(1.5) }));
-              }
               if (!storeOpen) {
                 manageScore(GameState.score += scorePerClick);
                 GameState.maxScore += scorePerClick;
                 play("clickRelease", {
                   detune: rand(-200, 200)
                 });
+                if (GameState.maxScore == 1)
+                  scoreText.opacity = 1;
+                if (GameState.maxScore == 4)
+                  tween(multiplierText.opacity, 1, 0.5, (p) => multiplierText.opacity = p);
+                if (GameState.maxScore == 9)
+                  tween(spsText.opacity, 1, 0.5, (p) => spsText.opacity = p);
+                if (GameState.maxScore == 24) {
+                  tween(store.opacity, 1, 0.5, (p) => store.opacity = p);
+                  store.use(area({ scale: vec2(1.5) }));
+                }
                 let plusScoreText = add([
                   text(`+${scorePerClick}`),
                   pos(rand(mousePos().x - 12, mousePos().x + 12), rand(mousePos().y - 12, mousePos().y + 12)),
@@ -4855,24 +4754,29 @@ vec4 frag(vec2 pos, vec2 uv, vec4 color, sampler2D tex) {
           play("clickPress", {
             detune: rand(-50, 50)
           });
+          mouse.play("grab");
         }
       });
       hexagonObj.onMouseRelease("left", () => {
-        if (canClickHexagon == true && !storeOpen && canClickStuff)
+        if (canClickHexagon == true && !storeOpen && canClickStuff) {
           hexagonObj.click();
+          mouse.play("point");
+        }
       });
       mouse.onCollide("hexagon", () => {
         if (!storeOpen && canClickStuff) {
           tween(hexagonObj.pos.y, height() / 2 + 32 - 10, 0.35, (p) => hexagonObj.pos.y = p, easings.easeOutCubic);
-          tween(hexagonObj.scale, vec2(0.222), 0.35, (p) => hexagonObj.scale = p, easings.easeOutBounce);
+          tween(hexagonObj.scale, vec2(0.95), 0.35, (p) => hexagonObj.scale = p, easings.easeOutBounce);
           canClickHexagon = true;
+          mouse.play("point");
         }
       });
       mouse.onCollideEnd("hexagon", () => {
         if (!storeOpen && canClickStuff) {
           tween(hexagonObj.pos.y, height() / 2 + 32, 0.35, (p) => hexagonObj.pos.y = p, easings.easeOutCubic);
-          tween(hexagonObj.scale, vec2(0.22), 0.35, (p) => hexagonObj.scale = p, easings.easeOutBounce);
+          tween(hexagonObj.scale, vec2(1), 0.35, (p) => hexagonObj.scale = p, easings.easeOutBounce);
           canClickHexagon = false;
+          mouse.play("cursor");
         }
       });
       scoreText = add([
@@ -4886,12 +4790,14 @@ vec4 frag(vec2 pos, vec2 uv, vec4 color, sampler2D tex) {
         scale(2),
         {
           update() {
-            this.text = formatScore(GameState.score);
+            this.text = formatScore(Math.floor(GameState.score));
           }
         }
       ]);
       maxScoreText = add([
-        text("Max:" + formatScore(GameState.maxScore)),
+        text("Max:" + formatScore(GameState.maxScore, {
+          width: width()
+        })),
         pos(scoreText.pos.x + 60, scoreText.pos.y - 30),
         anchor("center"),
         rotate(0),
@@ -4908,23 +4814,28 @@ vec4 frag(vec2 pos, vec2 uv, vec4 color, sampler2D tex) {
         pos(scoreText.pos.x, scoreText.pos.y + 50),
         anchor("center"),
         rotate(0),
-        scale(0.8)
+        scale(0.8),
+        {
+          verPosition: 100
+        }
       ]);
       multiplierText = add([
         text(formatScore(GameState.scoreMultiplier) + "x"),
         pos(20, height() - 40),
         anchor("left"),
         {
+          verPosition: height() - 40,
           update() {
             this.text = formatScore(GameState.scoreMultiplier) + "x";
           }
         }
       ]);
-      autoScoreText = add([
+      cursorsText = add([
         text(formatScore(GameState.cursors) + "<"),
         pos(20, height() - 90),
         anchor("left"),
         {
+          verPosition: height() - 90,
           update() {
             this.text = formatScore(GameState.cursors) + "<";
           }
@@ -4977,9 +4888,21 @@ vec4 frag(vec2 pos, vec2 uv, vec4 color, sampler2D tex) {
       }
       __name(manageScore, "manageScore");
       loop(3, () => {
-        tween(536, 541, 1.5, (p) => multiplierText.pos.y = p, easings.easeOutSine);
+        tween(multiplierText.verPosition, 541, 1.5, (p) => multiplierText.pos.y = p, easings.easeOutSine);
         wait(1.5, () => {
-          tween(541, 536, 1.5, (p) => multiplierText.pos.y = p, easings.easeOutSine);
+          tween(541, multiplierText.verPosition, 1.5, (p) => multiplierText.pos.y = p, easings.easeOutSine);
+        });
+      });
+      loop(3.03, () => {
+        tween(cursorsText.verPosition, 491, 1.515, (p) => cursorsText.pos.y = p, easings.easeOutSine);
+        wait(1.515, () => {
+          tween(491, cursorsText.verPosition, 1.515, (p) => cursorsText.pos.y = p, easings.easeOutSine);
+        });
+      });
+      loop(3.15, () => {
+        tween(spsText.verPosition, 105, 1.515, (p) => spsText.pos.y = p, easings.easeOutSine);
+        wait(1.65, () => {
+          tween(105, spsText.verPosition, 1.515, (p) => spsText.pos.y = p, easings.easeOutSine);
         });
       });
       scoreText.onHover(() => {
@@ -5032,6 +4955,11 @@ vec4 frag(vec2 pos, vec2 uv, vec4 color, sampler2D tex) {
       onKeyPress("w", () => {
         hexagonObj.click(true);
       });
+      onKeyPress("e", () => {
+        canBuyPowerup = true;
+        debug.log("can buy powerups");
+        debug.log(canBuyPowerup);
+      });
       onKeyDown("left", () => {
         camScale(0.5);
       });
@@ -5049,11 +4977,18 @@ vec4 frag(vec2 pos, vec2 uv, vec4 color, sampler2D tex) {
       onKeyPress("v", () => {
         GameState.score = 0;
         GameState.maxScore = 0;
-        sps = 0;
         GameState.scoreMultiplier = 1;
-        scorePerClick = 1;
         GameState.cursors = 0;
         GameState.hasUnlockedPowerups = false;
+        settingData();
+        savingData(dataToSave);
+      });
+      onKeyPress("b", () => {
+        GameState.score = 1e5;
+        GameState.maxScore = 1e5;
+        GameState.scoreMultiplier = 200;
+        GameState.cursors = 200;
+        GameState.hasUnlockedPowerups = true;
         settingData();
         savingData(dataToSave);
       });
@@ -5067,7 +5002,7 @@ vec4 frag(vec2 pos, vec2 uv, vec4 color, sampler2D tex) {
         scoreText.opacity = 0;
         multiplierText.opacity = 0;
         spsText.opacity = 0;
-        autoScoreText.opacity = 0;
+        cursorsText.opacity = 0;
         store.opacity = 0;
       } else {
         hasStartedGame = true;
@@ -5120,23 +5055,29 @@ vec4 frag(vec2 pos, vec2 uv, vec4 color, sampler2D tex) {
       ]);
       storeUI.add([
         pos(10, 50),
-        text(`Cursor (${GameState.cursors})
+        text(`Cursor (${GameState.cursors + 1})
 $${formatPrice(15)}`),
         scale(0.9),
         anchor("left"),
         color(),
         area(),
         "cursorElement",
+        "storeElement",
         {
           canBuyCursors: true,
           verPosition: 50,
-          price: 15,
+          basePrice: 25,
+          price: 25,
           working() {
-            this.price += Math.floor(this.price * GameState.cursors / 10);
+            if (GameState.cursors < 3) {
+              this.price += 5;
+            } else {
+              this.price += Math.floor(this.basePrice * GameState.cursors / 8);
+            }
             if (GameState.cursors < 1) {
               GameState.cursors++;
               this.canBuyCursors = false;
-              wait(5, () => {
+              wait(2.5, () => {
                 this.canBuyCursors = true;
               });
               tween(autoCursor.opacity, 1, 0.25, (p) => autoCursor.opacity = p);
@@ -5155,6 +5096,7 @@ $${formatPrice(15)}`),
                   play("clickRelease", {
                     detune: rand(-200, 200)
                   });
+                  tween(cursorsText.opacity, 1, 0.25, (p) => cursorsText.opacity = p);
                   autoPlusScoreText.pos.x = autoCursor.pos.x + rand(-20, 20);
                   autoPlusScoreText.pos.y = autoCursor.pos.y + rand(-20, 20);
                   tween(autoPlusScoreText.pos.y, autoPlusScoreText.pos.y - 20, 0.25, (p) => autoPlusScoreText.pos.y = p);
@@ -5176,7 +5118,7 @@ $${formatPrice(15)}`),
             }
           },
           update() {
-            this.text = `Cursor (${GameState.cursors})
+            this.text = `Cursor (${GameState.cursors + 1})
 $${formatPrice(this.price)}`;
           }
         }
@@ -5190,7 +5132,7 @@ $25`),
         anchor("left"),
         color(),
         area(),
-        "element",
+        "storeElement",
         {
           verPosition: 150,
           basePrice: 25,
@@ -5217,6 +5159,7 @@ $${formatPrice(this.price)}`;
         color(),
         area(),
         "powerupElement",
+        "storeElement",
         {
           verPosition: 250,
           basePrice: 1e3,
@@ -5229,6 +5172,7 @@ $${formatPrice(this.price)}`;
               canBuyPowerup = false;
               wait(10, () => {
                 canBuyPowerup = true;
+                debug.log("can buy");
               });
               let timesItSwitched = 0;
               let whatPowerUpWillYouGet = add([
@@ -5301,14 +5245,14 @@ $${formatPrice(this.price)}`;
         });
         element.onMouseRelease("left", () => {
           if (element.isHovering() && canClickStuff == true) {
-            if (element.is("powerupElement") && canBuyPowerup == true) {
+            if (element.is("powerupElement") && canBuyPowerup == false) {
               debug.log("you can't do that yet");
             } else if (element.is("cursorElement") && element.canBuyCursors == false) {
               debug.log("you can't do that yet");
             } else {
               tween(element.scale, vec2(0.95), 0.35, (p) => element.scale = p, easings.easeOutBounce);
               if (GameState.score >= element.price) {
-                manageScore(GameState.score -= element.price);
+                tween(Math.floor(GameState.score), Math.floor(GameState.score - element.price), 0.25, (p) => GameState.score = p);
                 element.working();
                 hasClicked = true;
                 storePitchSeconds = 0;
@@ -5332,9 +5276,22 @@ $${formatPrice(this.price)}`;
           }
         });
       });
-      onCharInput((ch) => {
-        if (ch == "1" || ch == "2" || ch == "3")
-          children[parseInt(ch) - 1].working();
+      onKeyPress("1", () => {
+        debug.log("holding");
+      });
+      onKeyRelease("1", () => {
+      });
+      onKeyPress("2", () => {
+        children[1].working();
+      });
+      onKeyRelease("2", () => {
+        children[1].working();
+      });
+      onKeyPress("3", () => {
+        children[2].working();
+      });
+      onKeyRelease("3", () => {
+        children[2].working();
       });
       onKeyPress("space", () => {
         if (GameState.maxScore >= 25) {
@@ -5352,6 +5309,103 @@ $${formatPrice(this.price)}`;
   }
   __name(gamescene, "gamescene");
 
+  // code/volumebar.js
+  function volumeManager() {
+    let barXPosition = -110;
+    let seconds = 0;
+    let tune2 = 0;
+    volume(GameState.volumeIndex / 10);
+    for (let i = 0; i < get("volElement").length; i++) {
+      destroy(get("volElement")[i]);
+    }
+    let bg = add([
+      rect(width() / 6, 80),
+      pos(width() / 2, 0),
+      anchor("top"),
+      color(BLACK),
+      opacity(0),
+      stay(),
+      z(999999999),
+      "volElement"
+    ]);
+    let volumeText = bg.add([
+      text("VOLUME"),
+      pos(0, bg.height - 12),
+      anchor("center"),
+      scale(0.6),
+      opacity(0),
+      z(9999999999),
+      "volElement"
+    ]);
+    let bars;
+    for (let i = 0; i < 10; i++) {
+      barXPosition += 20;
+      volumeText.add([
+        pos(barXPosition, -65),
+        rect(10, bg.height - 10),
+        opacity(0),
+        anchor("center"),
+        z(99999999999),
+        "volElement"
+      ]);
+    }
+    bars = volumeText.get("*", { recursive: true });
+    let gameManager = add([
+      rect(10, 10),
+      z(1e24),
+      stay(),
+      {
+        update() {
+          if (isKeyPressed("-")) {
+            if (GameState.volumeIndex > 0) {
+              bars[GameState.volumeIndex - 1].opacity = 0.1;
+              GameState.volumeIndex--;
+              volume(GameState.volumeIndex / 10);
+              tune2 -= 25;
+            }
+            play("volumeChange", { detune: tune2 });
+            seconds = 0;
+            bg.opacity = 0.5;
+            volumeText.opacity = 1;
+            for (let i = 0; i < 10; i++) {
+              bars[i].opacity = 0.1;
+            }
+            for (let i = 0; i < GameState.volumeIndex; i++) {
+              bars[i].opacity = 1;
+            }
+          } else if (isKeyPressed("+")) {
+            if (GameState.volumeIndex <= 9) {
+              bars[GameState.volumeIndex].opacity = 1;
+              GameState.volumeIndex++;
+              volume(GameState.volumeIndex / 10);
+              tune2 += 25;
+            }
+            play("volumeChange", { detune: tune2 });
+            seconds = 0;
+            bg.opacity = 0.5;
+            volumeText.opacity = 1;
+            for (let i = 0; i < 10; i++) {
+              bars[i].opacity = 0.1;
+            }
+            for (let i = 0; i < GameState.volumeIndex; i++) {
+              bars[i].opacity = 1;
+            }
+          }
+          seconds += dt();
+          if (seconds > 0.8) {
+            bg.opacity = 0;
+            volumeText.opacity = 0;
+            bars.forEach((element) => {
+              element.opacity = 0;
+            });
+          }
+        }
+      }
+    ]);
+    return gameManager;
+  }
+  __name(volumeManager, "volumeManager");
+
   // code/scenes/menuscene.js
   function menuscene() {
     return scene("menuscene", () => {
@@ -5365,7 +5419,9 @@ $${formatPrice(this.price)}`;
         text("clickeryHexagon"),
         pos(center())
       ]);
-      go("gamescene");
+      wait(1, () => {
+        go("gamescene");
+      });
       wait(1, () => {
         onKeyPress("space", () => {
           tween(title.pos.y, -50, 0.5, (p) => title.pos.y = p);
@@ -5393,6 +5449,16 @@ $${formatPrice(this.price)}`;
     loadSound("store", "sounds/store.mp3");
     loadSound("ominus", "sounds/ominus.mp3");
     loadSound("game_music", "sounds/game_music.mp3");
+    loadSprite("cursors", "sprites/cursors.png", {
+      sliceX: 4,
+      sliceY: 1,
+      anims: {
+        cursor: 0,
+        point: 1,
+        grab: 2,
+        wait: 3
+      }
+    });
     loadSprite("hexagon", "sprites/hexagon.png");
     loadSprite("cursor", "sprites/cursor.png");
     loadSprite("auto_cursor", "sprites/auto_cursor.png");
@@ -5418,7 +5484,15 @@ $${formatPrice(this.price)}`;
     ascendLevel: 1,
     volumeIndex: 9
   };
-  console.log(GameState);
+  var gottenData = getData("hexagon_save");
+  if (gottenData) {
+    GameState.score = gottenData._score;
+    GameState.maxScore = gottenData._maxScore;
+    GameState.scoreMultiplier = gottenData._scoreMultiplier;
+    GameState.cursors = gottenData._cursors;
+    GameState.hasUnlockedPowerups = gottenData._hasUnlockedPowerUps, GameState.volumeIndex = gottenData._volumeIndex;
+    console.log(gottenData);
+  }
   loadAssets();
   go("menuscene");
 })();

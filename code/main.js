@@ -2,6 +2,8 @@
 import kaboom from "https://esm.sh/kaboom@3000.1.17";
 
 import { loadAssets } from "./loader.js"
+import { volumeManager } from "./volumebar.js";
+
 export const k = kaboom({
 	width: 1024,
 	height: 576,
@@ -18,7 +20,18 @@ export let GameState = {
 	volumeIndex: 9,
 }
 
-console.log(GameState)
+let gottenData = getData("hexagon_save")
+
+if (gottenData) {
+	GameState.score = gottenData._score
+	GameState.maxScore = gottenData._maxScore
+	GameState.scoreMultiplier = gottenData._scoreMultiplier
+	GameState.cursors = gottenData._cursors
+	GameState.hasUnlockedPowerups = gottenData._hasUnlockedPowerUps,
+	GameState.volumeIndex = gottenData._volumeIndex
+
+	console.log(gottenData)
+}
 
 loadAssets()
 

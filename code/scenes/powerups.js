@@ -13,6 +13,8 @@ let OtherPowerUp
 let powerups = [badPowerUp, MultiplyScoreMultiplier, AddPercentage, OtherPowerUp]
 
 export function definePowerups() {
+	let bg = get("bg")[0]
+	
 	badPowerUp = make([
 		sprite("hexagon"),
 		pos(10, 10),
@@ -23,7 +25,6 @@ export function definePowerups() {
 		"powerup",
 		{
 			execute() {
-				let bg = get("bg")[0]
 				bg.color = rgb(64, 22, 22)
 				debug.log("bad power up :(")
 			
@@ -44,7 +45,6 @@ export function definePowerups() {
 		"powerup",
 		{
 			execute() {
-				let bg = get("bg")[0]
 				bg.color = rgb(22, 33, 64)
 				debug.log("Multiplies score multiplier by 2 :)")
 				GameState.scoreMultiplier = GameState.scoreMultiplier * 2
@@ -67,11 +67,11 @@ export function definePowerups() {
 		"powerup",
 		{
 			execute() {
-				let bg = get("bg")[0]
 				bg.color = rgb(22, 64, 25)
-				debug.log("Adds a percentage of your score to it :)")
-				
-				wait(10, () => {
+
+				tween(GameState.score, GameState.score + (GameState.score * 25) / 100, 5, (p) => GameState.score = p, )
+
+				wait(5, () => {
 					bg.color = rgb(50, 50, 50)
 				})
 			}
@@ -88,7 +88,6 @@ export function definePowerups() {
 		"powerup",
 		{
 			execute() {
-				let bg = get("bg")[0]
 				bg.color = rgb(64, 63, 22)
 				debug.log("other power up :)")
 			

@@ -6,6 +6,8 @@ export function volumeManager() {
 	let seconds = 0
 	let tune = 0
 
+	volume(GameState.volumeIndex / 10)
+
 	let bg = add([
 		rect(width() / 6, 80),
 		pos(width() / 2, 0),
@@ -24,7 +26,6 @@ export function volumeManager() {
 		opacity(0),
 		// stay(),
 		z(9999999999),
-		,
 	])
 	
 	let bars;

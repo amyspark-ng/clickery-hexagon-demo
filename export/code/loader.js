@@ -19,6 +19,17 @@ export function loadAssets() {
 	loadSound("ominus", "sounds/ominus.mp3")
 	loadSound("game_music", "sounds/game_music.mp3")
 
+	loadSprite("cursors", "sprites/cursors.png", {
+		sliceX: 4,
+		sliceY: 1,
+		anims: {
+			cursor: 0,
+			grab: 1,
+			point: 2,
+			wait: 3,
+		},
+	})
+
 	loadSprite("hexagon", "sprites/hexagon.png")
 	loadSprite("cursor", "sprites/cursor.png")
 	loadSprite("auto_cursor", "sprites/auto_cursor.png")

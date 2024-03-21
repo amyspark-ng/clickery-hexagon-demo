@@ -19,7 +19,9 @@ export function menuscene() {
 			pos(center()),
 		])
 
-		go("gamescene")
+		wait(1, () => {
+			go("gamescene")
+		})
 
 		wait(1, () => {
 			onKeyPress("space", () => {
