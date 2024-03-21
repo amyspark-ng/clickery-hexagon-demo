@@ -12,24 +12,50 @@ let OtherPowerUp
 
 let powerups = [badPowerUp, MultiplyScoreMultiplier, AddPercentage, OtherPowerUp]
 
+export function spawnPowerUp(powerup, posToAdd) {
+	let theObj = add(powerup)
+	powerup.pos = posToAdd
+	return theObj;
+}
+
 export function definePowerups() {
-	let bg = get("bg")[0]
-	
 	badPowerUp = make([
 		sprite("hexagon"),
 		pos(10, 10),
 		color(RED),
 		area(),
 		anchor("center"),
-		scale(0.04),
+		scale(0.5),
 		"powerup",
 		{
 			execute() {
-				bg.color = rgb(64, 22, 22)
-				debug.log("bad power up :(")
-			
+				let vignette = add([
+					sprite("vignette"),
+					pos(center()),
+					opacity(0),
+					anchor("center"),
+					color(WHITE),
+					"vignette"
+				])
+				
+				vignette.color = rgb(this.color)
+				tween(vignette.opacity, 1, 0.32, (p) => vignette.opacity = p,)
+				
+				GameState.scoreMultiplier = GameState.scoreMultiplier / 2
+
+				debug.log("Bad power up")
+	
 				wait(10, () => {
-					bg.color = rgb(50, 50, 50)
+					tween(vignette.opacity, 0, 0.32, (p) => vignette.opacity = p,)
+					vignette.color = WHITE
+					
+					
+					// returns things to normal
+					GameState.scoreMultiplier = GameState.scoreMultiplier * 2
+					
+					wait(1, () => {
+						destroy(vignette)
+					})
 				})
 			}
 		}
@@ -41,17 +67,35 @@ export function definePowerups() {
 		color(BLUE),
 		area(),
 		anchor("center"),
-		scale(0.04),
+		scale(0.5),
 		"powerup",
 		{
 			execute() {
-				bg.color = rgb(22, 33, 64)
-				debug.log("Multiplies score multiplier by 2 :)")
-				GameState.scoreMultiplier = GameState.scoreMultiplier * 2
+				let vignette = add([
+					sprite("vignette"),
+					pos(center()),
+					opacity(0),
+					anchor("center"),
+					color(WHITE),
+					"vignette"
+				])
 				
+				vignette.color = rgb(this.color)
+				tween(vignette.opacity, 1, 0.32, (p) => vignette.opacity = p,)
+			
+				GameState.scoreMultiplier = GameState.scoreMultiplier * 2
+
+				debug.log("Double multiplier power up")
+	
 				wait(10, () => {
-					bg.color = rgb(50, 50, 50)
+					tween(vignette.opacity, 0, 0.32, (p) => vignette.opacity = p,)
+					vignette.color = WHITE
+				
+					// returns things to normal
 					GameState.scoreMultiplier = GameState.scoreMultiplier / 2
+					wait(1, () => {
+						destroy(vignette)
+					})
 				})
 			}
 		}
@@ -63,16 +107,33 @@ export function definePowerups() {
 		color(GREEN),
 		area(),
 		anchor("center"),
-		scale(0.04),
+		scale(0.5),
 		"powerup",
 		{
-			execute() {
-				bg.color = rgb(22, 64, 25)
 
+			execute() {
+				let vignette = add([
+					sprite("vignette"),
+					pos(center()),
+					opacity(0),
+					anchor("center"),
+					color(WHITE),
+					"vignette"
+				])
+				
+				vignette.color = rgb(this.color)
+				tween(vignette.opacity, 1, 0.32, (p) => vignette.opacity = p,)
+				
 				tween(GameState.score, GameState.score + (GameState.score * 25) / 100, 5, (p) => GameState.score = p, )
 
+				debug.log("Adds percentage power up")
+	
 				wait(5, () => {
-					bg.color = rgb(50, 50, 50)
+					tween(vignette.opacity, 0, 0.32, (p) => vignette.opacity = p,)
+					vignette.color = WHITE
+					wait(1, () => {
+						destroy(vignette)
+					})
 				})
 			}
 		}
@@ -84,15 +145,30 @@ export function definePowerups() {
 		color(YELLOW),
 		area(),
 		anchor("center"),
-		scale(0.04),
+		scale(0.5),
 		"powerup",
 		{
 			execute() {
-				bg.color = rgb(64, 63, 22)
-				debug.log("other power up :)")
-			
-				wait(10, () => {
-					bg.color = rgb(50, 50, 50)
+				let vignette = add([
+					sprite("vignette"),
+					pos(center()),
+					opacity(0),
+					anchor("center"),
+					color(WHITE),
+					"vignette"
+				])
+				
+				vignette.color = rgb(this.color)
+				tween(vignette.opacity, 1, 0.32, (p) => vignette.opacity = p,)
+				
+				debug.log("Does some other thing")
+	
+				wait(5, () => {
+					tween(vignette.opacity, 0, 0.32, (p) => vignette.opacity = p,)
+					vignette.color = WHITE
+					wait(1, () => {
+						destroy(vignette)
+					})
 				})
 			}
 		}
@@ -101,11 +177,4 @@ export function definePowerups() {
 	powerups = [badPowerUp, MultiplyScoreMultiplier, AddPercentage, OtherPowerUp]
 	// powerups = [MultiplyScoreMultiplier]
 	return powerups;
-}
-
-export function spawnPowerUp(powerup, posToAdd) {
-	let theObj = add(powerup)
-	powerup.pos = posToAdd
-
-	return theObj;
 }

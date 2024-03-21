@@ -19,7 +19,7 @@ export function menuscene() {
 			pos(center()),
 		])
 
-		wait(1, () => {
+		wait(0.1, () => {
 			go("gamescene")
 		})
 

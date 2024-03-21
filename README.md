@@ -15,3 +15,5 @@ Kaboom template made with deno that edited to my personal needs and current know
 
 - To create new project, do `git clone https://github.com/amyspark-ng/kaboomdeno-template`
 `vr start` - run project (wth???)
+
+// Change this

@@ -54,8 +54,6 @@ export function volumeManager() {
 	
 
 	let gameManager = add([
-		rect(10, 10),
-		z(999999999999999999999999),
 		stay(),
 		{
 			update() {

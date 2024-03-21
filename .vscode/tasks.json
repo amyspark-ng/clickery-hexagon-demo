@@ -1,20 +1,26 @@
 {
+	"version": "2.0.0",
 	"tasks": [
 		{
 			// For this to work you need to have installed 7z
-			"label": "Build Kaboom",
+			"label": "— Build Kaboom",
 			"type": "shell",
-			"command": "Start-Process bundle-file.bat",
+			"command": "pnpm build",
 			"group": {
 				"kind": "build",
 			}
 		},
 		{
-			// For this to work you need to have installed butler in your path
-			// To use this one you don't need to necessarily zip the export folder
+			// This runs the pnpm build and then runs the butler to send it to itch.io
 			"label": "Deliver kaboom to Itch.io",
 			"type": "shell",
 			"command": "butler push export amyspark-ng/clickery-hexagon-2:html5 --userversion 1.0",
+		},
+		{
+			// This runs the pnpm build and then runs the butler to send it to itch.io
+			"label": "Deliver kaboom to Itch.io",
+			"type": "shell",
+			"command": "pnpm build && butler push export amyspark-ng/clickery-hexagon-2:html5 --userversion 1.0",
 		},
 	]
 }
