@@ -1,12 +1,12 @@
 import kaboom from "kaboom";
 
-import { loadAssets } from "./loader.js"
+import { loadAssets } from "./loader.js";
 import { volumeManager } from "./volumebar.js";
 
 export const k = kaboom({
 	width: 1024,
 	height: 576,
-	font: 'apl386',
+	font: "apl386",
 });
 
 export let GameState = {
@@ -17,22 +17,22 @@ export let GameState = {
 	hasUnlockedPowerups: false,
 	ascendLevel: 1,
 	volumeIndex: 9,
-}
+};
 
-let gottenData = getData("hexagon_save")
+let gottenData = getData("hexagon_save");
 
 if (gottenData) {
-	GameState.score = gottenData._score
-	GameState.maxScore = gottenData._maxScore
-	GameState.scoreMultiplier = gottenData._scoreMultiplier
-	GameState.cursors = gottenData._cursors
+	GameState.score = gottenData._score;
+	GameState.maxScore = gottenData._maxScore;
+	GameState.scoreMultiplier = gottenData._scoreMultiplier;
+	GameState.cursors = gottenData._cursors;
 	GameState.hasUnlockedPowerups = gottenData._hasUnlockedPowerUps,
-	GameState.volumeIndex = gottenData._volumeIndex
+		GameState.volumeIndex = gottenData._volumeIndex;
 
-	console.log(gottenData)
+	console.log(gottenData);
 }
 
-loadAssets()
+loadAssets();
 
-go("menuscene")
+go("menuscene");
 // go("gamescene")

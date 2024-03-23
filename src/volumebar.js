@@ -1,15 +1,14 @@
-
-import { GameState } from "./main.js"
+import { GameState } from "./main.js";
 
 export function volumeManager() {
-	let barXPosition = -110
-	let seconds = 0
-	let tune = 0
+	let barXPosition = -110;
+	let seconds = 0;
+	let tune = 0;
 
-	volume(GameState.volumeIndex / 10)
+	volume(GameState.volumeIndex / 10);
 
 	for (let i = 0; i < get("volElement").length; i++) {
-		destroy(get("volElement")[i])
+		destroy(get("volElement")[i]);
 	}
 
 	let bg = add([
@@ -21,8 +20,8 @@ export function volumeManager() {
 		stay(),
 		z(999999999),
 		"volElement",
-	])
-	
+	]);
+
 	let volumeText = bg.add([
 		text("VOLUME"),
 		pos(0, bg.height - 12),
@@ -32,13 +31,13 @@ export function volumeManager() {
 		// stay(),
 		z(9999999999),
 		"volElement",
-	])
-	
+	]);
+
 	let bars;
-	
+
 	for (let i = 0; i < 10; i++) {
-		barXPosition += 20
-		
+		barXPosition += 20;
+
 		volumeText.add([
 			pos(barXPosition, -65),
 			rect(10, bg.height - 10),
@@ -47,11 +46,10 @@ export function volumeManager() {
 			// stay(),
 			z(99999999999),
 			"volElement",
-		])
+		]);
 	}
 
-	bars = volumeText.get("*", { recursive: true })
-	
+	bars = volumeText.get("*", { recursive: true });
 
 	let gameManager = add([
 		stay(),
@@ -59,60 +57,58 @@ export function volumeManager() {
 			update() {
 				if (isKeyPressed("-")) {
 					if (GameState.volumeIndex > 0) {
-						bars[GameState.volumeIndex - 1].opacity = 0.1
-						GameState.volumeIndex--
-						volume(GameState.volumeIndex / 10)
-						tune -= 25
+						bars[GameState.volumeIndex - 1].opacity = 0.1;
+						GameState.volumeIndex--;
+						volume(GameState.volumeIndex / 10);
+						tune -= 25;
 					}
-					
-					play("volumeChange", { detune: tune })
-					seconds = 0
-					bg.opacity = 0.5
-					volumeText.opacity = 1
-					for(let i = 0; i < 10; i++) {
-						bars[i].opacity = 0.1
+
+					play("volumeChange", { detune: tune });
+					seconds = 0;
+					bg.opacity = 0.5;
+					volumeText.opacity = 1;
+					for (let i = 0; i < 10; i++) {
+						bars[i].opacity = 0.1;
 					}
-			
-					for(let i = 0; i < GameState.volumeIndex; i++) {
-						bars[i].opacity = 1
+
+					for (let i = 0; i < GameState.volumeIndex; i++) {
+						bars[i].opacity = 1;
+					}
+				} else if (isKeyPressed("+")) {
+					if (GameState.volumeIndex <= 9) {
+						bars[GameState.volumeIndex].opacity = 1;
+						GameState.volumeIndex++;
+						volume(GameState.volumeIndex / 10);
+						tune += 25;
+					}
+
+					play("volumeChange", { detune: tune });
+
+					seconds = 0;
+					bg.opacity = 0.5;
+					volumeText.opacity = 1;
+					for (let i = 0; i < 10; i++) {
+						bars[i].opacity = 0.1;
+					}
+
+					for (let i = 0; i < GameState.volumeIndex; i++) {
+						bars[i].opacity = 1;
 					}
 				}
 
-				else if (isKeyPressed("+")) {
-					if (GameState.volumeIndex <= 9) {
-						bars[GameState.volumeIndex].opacity = 1
-						GameState.volumeIndex++
-						volume(GameState.volumeIndex / 10)
-						tune += 25
-					}
-					
-					play("volumeChange", { detune: tune })
-					
-					seconds = 0
-					bg.opacity = 0.5
-					volumeText.opacity = 1
-					for(let i = 0; i < 10; i++) {
-						bars[i].opacity = 0.1
-					}
-			
-					for(let i = 0; i < GameState.volumeIndex; i++) {
-						bars[i].opacity = 1
-					}
-				}
-			
-				seconds += dt()
+				seconds += dt();
 
 				// makes it so everything dissapears
 				if (seconds > 0.8) {
-					bg.opacity = 0
-					volumeText.opacity = 0
+					bg.opacity = 0;
+					volumeText.opacity = 0;
 					bars.forEach(element => {
-						element.opacity = 0
+						element.opacity = 0;
 					});
 				}
-			}
-		}
-	])
+			},
+		},
+	]);
 
 	return gameManager;
 }
