@@ -34,6 +34,7 @@ export function loadAssets() {
 	loadSprite("hexagon", "sprites/hexagon.png")
 	loadSprite("cursor", "sprites/cursor.png")
 	loadSprite("auto_cursor", "sprites/auto_cursor.png")
+	loadSprite("auto_click", "sprites/auto_click.png")
 	loadSprite("disket", "sprites/disket.png")
 	loadSprite("vignette", "sprites/vignette.png")
 

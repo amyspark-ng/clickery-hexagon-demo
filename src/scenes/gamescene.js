@@ -51,7 +51,11 @@ function settingData() {
 
 let powerups;
 let canBuyPowerup = false
-let canClickStuff = true
+export let canClickStuff = true
+
+export function setCanClickStuff(value) {
+	canClickStuff = value
+}
 
 // TODO: Re work power ups
 // TODO: Menu scene transitions
@@ -61,6 +65,7 @@ let canClickStuff = true
 
 // DEFINING OBJECTS
 let hexagonObj
+export let mouse
 
 let scoreText
 let maxScoreText
@@ -80,16 +85,14 @@ export function gamescene() {
 			// color(50, 50, 50),
 			color(50, 50, 50),
 			stay(),
+			// z(-1),
 			anchor("center"),
 			"bg"
 		])
 
-		// they need bg to work
-		powerups = definePowerups()
-
 		setCursor("none")
 
-		let mouse = add([
+		mouse = add([
 			sprite("cursors"),
 			pos(mousePos()),
 			rotate(0),
@@ -101,11 +104,32 @@ export function gamescene() {
 				waiting: false,
 				update() {
 					this.pos = mousePos()
+				},
+				waitAnim() {
+					if (this.waiting == false) {
+						this.play("wait")
+						this.waiting = true
+						let l = loop(0.25, () => {
+							this.angle += 90
+							if (this.angle == 180) this.flipY = true
+						})
+	
+						wait(1, () => {
+							l.cancel()
+							this.play("cursor")
+							this.waiting = false
+							this.angle = 0
+							this.flipY = false
+						})
+					}
 				}
 			}
 		])
 
 		// #endregion
+
+		// they need bg to work
+		powerups = definePowerups()
 
 		// #region Hexagon Stuff
 		hexagonObj = add([
@@ -157,11 +181,17 @@ export function gamescene() {
 		
 						autoPlusScoreText.pos.y = autoCursor.pos.y + rand(-20, 20)
 		
+						autoClickAnim.scale = vec2(1)
+						autoClickAnim.pos = autoCursor.pos
+						autoClickAnim.angle = 0
+
 						// appearing animations
 						tween(autoCursor.opacity, 1, 0.25, (p) => autoCursor.opacity = p, )
 						tween(autoPlusScoreText.opacity, 1, 0.25, (p) => autoPlusScoreText.opacity = p, )
 						tween(autoPlusScoreText.pos.y, autoPlusScoreText.pos.y - 20, 0.25, (p) => autoPlusScoreText.pos.y = p, )
 						tween(autoPlusScoreText.angle, rand(-10, 10), 0.25, (p) => autoPlusScoreText.angle = p, )
+						
+						tween(autoClickAnim.opacity, 1, 0.26, (p) => autoClickAnim.opacity = p, )
 		
 						// score managing and hexagon animations
 						manageScore(GameState.score + GameState.cursors)
@@ -182,6 +212,10 @@ export function gamescene() {
 								detune: rand(-200, 200)
 							})
 		
+							tween(autoClickAnim.opacity, 0, 0.25, (p) => autoClickAnim.opacity = p, )
+							tween(autoClickAnim.scale, vec2(2), 0.25, (p) => autoClickAnim.scale = p, )
+							tween(autoClickAnim.angle, 360, 0.25, (p) => autoClickAnim.angle = p, )
+
 							tween(0, rand(-10, 10), 0.08, (p) => scoreText.angle = p, easings.easeOutBounce)
 							tween(50, 55 , 0.08, (p) => scoreText.pos.y = p, easings.easeOutBounce)
 							wait(0.25, () => {
@@ -219,19 +253,21 @@ export function gamescene() {
 
 							if (GameState.maxScore == 1) scoreText.opacity = 1
 							if (GameState.maxScore == 5) tween(multiplierText.pos.x, 20, 0.5, (p) => multiplierText.pos.x = p, easings.easeOutBack)
-							if (GameState.maxScore == 10) tween(spsText.pos.y, spsText.verPosition, 0.5, (p) => spsText.pos.y, easings.easeOutBack)
+							if (GameState.maxScore == 10) tween(spsText.opacity, 1, 0.5, (p) => spsText.opacity = p, )
 							if (GameState.maxScore == 25) {
 								tween(store.pos.y, height() - 50, 0.5, (p) => store.pos.y = p, easings.easeOutBack)
 								store.use(area({ scale: vec2(1.5) }))
 							}
-							if (GameState.cursors >= 1) tween(cursorsText.opacity, 1, 0.25, (p) => cursorsText.opacity = p, )
+							// if (GameState.cursors >= 1) tween(cursorsText.opacity, 1, 0.25, (p) => cursorsText.opacity = p, )
 
 							let plusScoreText = add([
 								text(`+${scorePerClick}`),
-								pos(rand(mousePos().x - 12, mousePos().x + 12), rand(mousePos().y - 12, mousePos().y + 12)),
+								// pos(rand(mousePos().x - 25, mousePos().x + 25), rand(mousePos().y - 25, mousePos().y + 25)),
+								pos(rand(mousePos().x - 25, mousePos().x + 25), rand(mousePos().y - 25, mousePos().y + 25)),
 								anchor("center"),
 								rotate(0),
 								opacity(1),
+								// z(9999999999999999999),
 								rotate(rand(-10, 10)),
 								{
 									update() {
@@ -270,23 +306,27 @@ export function gamescene() {
 		])
 
 		hexagonObj.onMousePress("left", () => {
-			if (canClickHexagon == true && !storeOpen && canClickStuff == true) {
-				cps += GameState.scoreMultiplier
-				tween(vec2(1), vec2(0.96), 0.35, (p) => hexagonObj.scale = p, easings.easeOutBounce)
-				play("clickPress", {
-					detune: rand(-50, 50)
-				})
-				if (!mouse.waiting) {
-					mouse.play("grab")
-				}
-			} 
+			if (hexagonObj.isHovering()) {
+				if (canClickHexagon && !storeOpen && canClickStuff) {
+					cps += GameState.scoreMultiplier
+					tween(vec2(1), vec2(0.96), 0.35, (p) => hexagonObj.scale = p, easings.easeOutBounce)
+					play("clickPress", {
+						detune: rand(-50, 50)
+					})
+					if (!mouse.waiting) {
+						mouse.play("grab")
+					}
+				} 
+			}
 		})
 		
 		hexagonObj.onMouseRelease("left", () => {
-			if (canClickHexagon == true && !storeOpen && canClickStuff) {
-				hexagonObj.click()
-				if (!mouse.waiting) {
-					mouse.play("point")
+			if (hexagonObj.isHovering()) {
+				if (canClickHexagon == true && !storeOpen && canClickStuff) {
+					hexagonObj.click()
+					if (!mouse.waiting) {
+						mouse.play("point")
+					}
 				}
 			}
 		})
@@ -304,7 +344,7 @@ export function gamescene() {
 		})
 		
 		hexagonObj.onHoverEnd(() => {
-			if (!storeOpen && canClickStuff) {
+			if (canClickStuff) {
 				tween(hexagonObj.pos.y, hexagonObj.verPosition, 0.35, (p) => hexagonObj.pos.y = p, easings.easeOutCubic)
 				tween(vec2(1.01), vec2(1), 0.35, (p) => hexagonObj.scale = p, easings.easeOutBounce)
 				canClickHexagon = false
@@ -315,6 +355,7 @@ export function gamescene() {
 			}
 		})
 
+		/*
 		// TODO: Fix floating
 		// floating
 		hexagonObj.onStateEnter("down", () => {
@@ -334,6 +375,7 @@ export function gamescene() {
 				hexagonObj.enterState("down")
 			})
 		})
+		*/
 		// #endregion
 
 		// #region Text Stuff
@@ -355,26 +397,27 @@ export function gamescene() {
 		])
 		
 		maxScoreText = add([
-			text("Max:" + formatScore(GameState.maxScore, {
+			text(formatScore(GameState.maxScore, {
 				width: width()
 			})),
-			pos(scoreText.pos.x + 60, scoreText.pos.y - 30),
+			pos(scoreText.pos.x, scoreText.pos.y - 35),
 			anchor("center"),
 			rotate(0),
 			opacity(0),
 			scale(0.6),
 			{
 				update() {
-					this.text = "Max: " + formatScore(GameState.maxScore)
-				}
+					this.text = formatScore(GameState.maxScore)
+				},
 			}
 		])
 
 		spsText = add([
 			text(sps + "/s"),
-			pos(scoreText.pos.x, hasStartedGame ? 100 : height() / 2),
+			pos(scoreText.pos.x, 100),
 			anchor("center"),
 			rotate(0),
+			opacity(hasStartedGame ? 1 : 0),
 			scale(0.8),
 			{
 				verPosition: 100
@@ -396,7 +439,7 @@ export function gamescene() {
 		cursorsText = add([
 			text(formatScore(GameState.cursors) + "<"),
 			pos(20, height() - 90),
-			opacity(GameState.cursors > 1 ? 1 : 0),
+			opacity(GameState.cursors >= 1 ? 1 : 0),
 			anchor("left"),
 			{
 				verPosition: height() - 90,
@@ -424,26 +467,23 @@ export function gamescene() {
 					if (storeOpen) {
 						// stopre opened
 						markiplier = chance(0.05) ? 'Markiplier' : 'Multiplier'
-						if (markiplier == "Markiplier") debug.log("HELLO EVERYONE MY NAME IS MARKIPLIER")
 	
-						tween(0, 0.5, 0.25, (p) => opaque.opacity = p, )
-
 						tween(height() - 50, height() - 40, 0.25, (p) => store.pos.y = p, )
-						// tween(height() - 50, height() - 40, 0.25, (p) => store.pos.y = p, )
 						
+						// opaque
+						tween(0, 0.5, 0.25, (p) => opaque.opacity = p, )
 						// storeUI
-						tween(width(), width() - storeUI.width, 0.25, (p) => storeUI.pos.x = p, easings.easeOutElastic)
+						tween(width(), width() - 384, 0.15, (p) => storeUI.pos.x = p, easings.easeOutBack)
 					}
 					
 					else {
 						// store closened
-						tween(0.5, 0, 0.25, (p) => opaque.opacity = p, )
-						
 						tween(height() - 40, height() - 50, 0.25, (p) => store.pos.y = p, easings.easeOutCubic)
-						// tween(height() - 40, height() - 50, 0.25, (p) => store.pos.y = p, easings.easeOutCubic)
-
+						
+						// opaque
+						tween(0.5, 0, 0.25, (p) => opaque.opacity = p, )
 						// storeUI
-						tween(storeUI.pos.x, width(), 0.25, (p) => storeUI.pos.x = p, easings.easeOutElastic)
+						tween(storeUI.pos.x, width(), 0.15, (p) => storeUI.pos.x = p, easings.easeOutBack)
 					}
 				}
 			}
@@ -491,29 +531,33 @@ export function gamescene() {
 		})
 
 		loop(3.15, () => {
-			tween(spsText.verPosition, 105, 1.515, (p) => spsText.pos.y = p, easings.easeOutSine)
-			
-			wait(1.65, () => {
-				tween(105, spsText.verPosition, 1.515, (p) => spsText.pos.y = p, easings.easeOutSine)
-			})
+			if (hasStartedGame) {
+				wait(10, () => {
+					tween(spsText.verPosition, 105, 1.515, (p) => spsText.pos.y = p, easings.easeOutSine)
+					
+					wait(1.65, () => {
+						tween(105, spsText.verPosition, 1.515, (p) => spsText.pos.y = p, easings.easeOutSine)
+					})
+				})
+			}
 		})
 		
 		scoreText.onHover(() => {
-				if (!storeOpen && GameState.maxScore > 10) {
-					tween(0, 1, 0.15, (p) => maxScoreText.opacity = p, )
-					if (!mouse.waiting) {
-						mouse.play("check")
-					}
-				} 				
+			if (!storeOpen && GameState.maxScore > 10) {
+				tween(0, 1, 0.15, (p) => maxScoreText.opacity = p, )
+				if (!mouse.waiting) {
+					mouse.play("check")
+				}
+			} 				
 		})
 		
 		scoreText.onHoverEnd(() => {
-			if (!storeOpen && GameState.maxScore > 10) {
+			if (GameState.maxScore > 10) {
 				tween(1, 0, 0.15, (p) => maxScoreText.opacity = p, )
 				if (!mouse.waiting) {
 					mouse.play("cursor")
 				}
-			} 				
+			}
 		})
 
 		// store
@@ -566,17 +610,24 @@ export function gamescene() {
 		onUpdate(() => {
 			if (GameState.score == 0) hexagonObj.rotSpeed = 0.01
 			else {
-				if (hexagonObj.rotSpeed < 15) {
-					changeOfRotSpeedPerScore = (15 - 0.01) / scoreToAscend
-					hexagonObj.rotSpeed = 0.01 + changeOfRotSpeedPerScore * GameState.score
+				if (hexagonObj.isHovering()) {
+					if (hexagonObj.rotSpeed < 18.75) {
+						changeOfRotSpeedPerScore = (18.75 - 0.01) / scoreToAscend
+						hexagonObj.rotSpeed = 0.01 + changeOfRotSpeedPerScore * GameState.score
+					}
+				}
+				
+				else {
+					if (hexagonObj.rotSpeed < 15) {
+						changeOfRotSpeedPerScore = (15 - 0.01) / scoreToAscend
+						hexagonObj.rotSpeed = 0.01 + changeOfRotSpeedPerScore * GameState.score
+					}
 				}
 			}
 			
 			hexagonObj.angle += hexagonObj.rotSpeed
 			
-			// debug.log(hexagonObj.pos.y)
-
-			if (hexagonObj.angle >= 3600) {
+			if (hexagonObj.angle >= 360) {
 				hexagonObj.angle = 0
 			}
 
@@ -653,8 +704,8 @@ export function gamescene() {
 
 		// cheatingData
 		onKeyPress("b", () => {
-			GameState.score = 100000
-			GameState.maxScore = 100000
+			GameState.score = 500000
+			GameState.maxScore = 500000
 			GameState.scoreMultiplier = 200
 			GameState.cursors = 200
 			GameState.hasUnlockedPowerups = true
@@ -684,8 +735,10 @@ export function gamescene() {
 		}
 		
 		let autoCursor = add([
-			sprite("auto_cursor"),
-			scale(0.9),
+			sprite("cursors"),
+			color(204, 204, 204),
+			scale(0.8),
+			z(10),
 			pos(width(), height()),
 			opacity(0),
 			rotate(0)
@@ -706,6 +759,22 @@ export function gamescene() {
 			}
 		]);
 		
+		let autoClickAnim = add([
+			sprite("auto_click"),
+			color(rgb(152, 202, 235)),
+			pos(autoCursor.pos),
+			opacity(0),
+			anchor("center"),
+			scale(1),
+			rotate(0),
+			z(9),
+			{
+				update() {
+					this.pos = autoCursor.pos
+				}
+			}
+		])
+
 		let autoLoop = loop(10, () => {
 			// that means its clicking auto :)
 			hexagonObj.click(true)
@@ -748,31 +817,32 @@ export function gamescene() {
 		])
 
 		let storeUI = add([
-			rect(width() / 2 - width() / 8, height()),
+			rect(384 + 100, height()),
+			anchor("topleft"),
 			pos(width(), 0),
 			color(34, 50, 97),
 			{
 				// the thing that would be really cool if it worked (it does)
 				update() {
 					if (storeOpen) {
-						if (isKeyPressed("1")) {
-							actuallyBuying(children[0])
-						}
-
-						else if (isKeyPressed("2")) {
-							actuallyBuying(children[1])
-						}
-
-						else if (isKeyPressed("3")) {
-							actuallyBuying(children[2])
-						}
-
-						else if (isKeyPressed("4")) {
-							actuallyBuying(children[3])
-						}
+						// what the fuck this doesn't work yet???????
+						// if (isKeyPressed("1")) {
+						// 	children[0].working()
+						// }
+						
+						// else if (isKeyPressed("2")) {
+						// 	children[1].working()
+						// }
+						
+						// else if (isKeyPressed("3")) {
+						// 	children[2].working()
+						// }
+						
+						// else if (isKeyPressed("4")) {
+						// 	children[3].working()
+						// }
 					}
 				},
-
 			}
 		])
 
@@ -793,24 +863,18 @@ export function gamescene() {
 				price: 25,
 
 				working() {
-					if (GameState.cursors < 3) {
-						this.price += 5
-					}
-
-					else {
-						this.price += Math.floor(this.basePrice * GameState.cursors / 8)
-					}
 					// unlock cursors
 					if (GameState.cursors < 1) {
 						GameState.cursors++
 						this.canBuyCursors = false
 						wait(2.5, () => {
 							this.canBuyCursors = true
+							mouse.waiting = false
 						})
 					
 						tween(autoCursor.opacity, 1, 0.25, (p) => autoCursor.opacity = p, )
 						tween(autoCursor.pos, center(), 2, (p) => autoCursor.pos = p, )
-						
+
 						wait(2, () => {
 							manageScore(GameState.score + GameState.cursors)
 							GameState.maxScore += GameState.cursors
@@ -821,7 +885,9 @@ export function gamescene() {
 							play("clickPress", {
 								detune: rand(-50, 50)
 							})
-			
+
+							// auto click anim
+							tween(autoClickAnim.opacity, 1, 0.25, (p) => autoClickAnim.opacity = p, )
 							wait(0.20, () => {
 								tween(autoCursor.opacity, 0, 0.25, (p) => autoCursor.opacity = p, )
 								tween(autoPlusScoreText.opacity, 0, 0.25, (p) => autoPlusScoreText.opacity = p, )
@@ -829,6 +895,10 @@ export function gamescene() {
 								play("clickRelease", {
 									detune: rand(-200, 200)
 								})
+
+								tween(autoClickAnim.opacity, 0, 0.25, (p) => autoClickAnim.opacity = p, )
+								tween(autoClickAnim.scale, vec2(2), 0.25, (p) => autoClickAnim.scale = p, )
+								tween(autoClickAnim.angle, 360, 0.25, (p) => autoClickAnim.angle = p, )
 
 								tween(cursorsText.opacity, 1, 0.25, (p) => cursorsText.opacity = p, )
 
@@ -858,11 +928,13 @@ export function gamescene() {
 
 					else {
 						GameState.cursors++
+						this.price = GameState.cursors != 0 ? this.price = Math.round(GameState.cursors * this.basePrice * 0.6) : 25
 					}
 				},
 				
 				update() {
 					this.text = `Cursor (${GameState.cursors + 1})\n$${formatPrice(this.price)}`
+					this.price = GameState.cursors != 0 ? this.price = Math.round(GameState.cursors * this.basePrice * 0.6) : 25
 				}
 			}
 		])
@@ -877,16 +949,19 @@ export function gamescene() {
 			area(),
 			"storeElement",
 			{
-				verPosition: 150,
+				verPosition: 150, 
 				basePrice: 25,
+				// price: GameState.scoreMultiplier > 1 ? Math.round(25 + 3.75 * GameState.scoreMultiplier) : 25,
 				price: 25,
+				
 				working() {
 					GameState.scoreMultiplier += buyMultiplier
-					this.price = Math.floor(GameState.scoreMultiplier * this.basePrice * 0.5)
+					this.price = GameState.scoreMultiplier != 1 ? this.price = Math.round(GameState.scoreMultiplier * this.basePrice * 0.6) : 25
+
 				},
 				
 				update() {
-					if (GameState.scoreMultiplier > 1) this.price = Math.floor(GameState.scoreMultiplier * this.basePrice * 0.5)
+					this.price = GameState.scoreMultiplier != 1 ? this.price = Math.round(GameState.scoreMultiplier * this.basePrice * 0.6) : 25
 					this.text = `${markiplier} (${formatPrice(GameState.scoreMultiplier + 1)}x)\n$${formatPrice(this.price)}`
 				}
 			}
@@ -895,7 +970,7 @@ export function gamescene() {
 		// powerups unlock / buy
 		storeUI.add([
 			pos(10, 250),
-			text(GameState.hasUnlockedPowerups == false ? `Unlock power-ups\n1K` : `Buy random power up\n1M`),
+			text(GameState.hasUnlockedPowerups == false ? `Unlock power-ups\n1K` : `Buy random power up\n${scoreToAscend/10}`),
 			scale(0.89),
 			anchor("left"),
 			color(),
@@ -910,18 +985,23 @@ export function gamescene() {
 					// hasn't
 					if (!GameState.hasUnlockedPowerups) {
 						GameState.hasUnlockedPowerups = true
+					
+						// this should be 5 minutes
+						wait(60 * 5, () => {
+							powerups.shift()
+							powerups = shuffleArray(powerups)
+							spawnPowerUp(shuffleArray(powerups)[0], false)
+							powerups = definePowerups()
+						})
 					}
 
 					// has
 					else {
 						powerups = shuffleArray(powerups)
 						canBuyPowerup = false
-						mouse.waiting = true
-						
+
 						wait(5, () => {
 							canBuyPowerup = true
-							debug.log("can buy")
-							mouse.waiting = false
 						})
 
 						let timesItSwitched = 0
@@ -929,9 +1009,9 @@ export function gamescene() {
 						let whatPowerUpWillYouGet = add([
 							sprite("hexagon"),
 							color(WHITE),
-							pos(center()),
+							pos(this.pos.x + 700, this.pos.y + 50),
 							area(),
-							scale(0.04),
+							scale(0.25),
 						])
 						
 						let timeUntilSwitch = 0.1
@@ -950,28 +1030,39 @@ export function gamescene() {
 							if (timesSwitched == 20) {
 								loopy.cancel()
 								
-								let powerUpYouGot = spawnPowerUp(powerups[powerUpIndex], whatPowerUpWillYouGet.pos)
+								let powerUpYouGot = spawnPowerUp(powerups[powerUpIndex], whatPowerUpWillYouGet.pos, true)
 								destroy(whatPowerUpWillYouGet)
 								
+								wait(rand(120, 600), () => {
+									powerups = shuffleArray(powerups)
+									let theOne = spawnPowerUp(shuffleArray(powerups)[0], center(), false)
+								})
+				
 								wait(0.8, () => {
-									powerUpYouGot.onUpdate(() => {
-										canClickStuff = !powerUpYouGot.isHovering()
-									})
-
-									loop(6.5, () => {
-										tween(powerUpYouGot.pos, vec2(rand(0, width()), rand(0, height())), 6.5, (p) => powerUpYouGot.pos = p,)
-									})
-	
-									powerUpYouGot.onMousePress("left", () => {
-										tween(powerUpYouGot.scale, vec2(0.1), 0.35, (p) => powerUpYouGot.scale = p, easings.easeOutBounce)
-									})
+									if (powerUpYouGot.is("bad")) {
+										tween(powerUpYouGot.pos, center(), 3.25, (p) => powerUpYouGot.pos = p, easings.easeInOutSine)
 									
-									powerUpYouGot.onMouseRelease("left", () => {
-										powerUpYouGot.execute() // this runs the actual effect it has
-										
-										destroy(powerUpYouGot)
-										canClickStuff = true
-									})
+										wait(3.25, () => {
+											tween(1, 0, 0.32, (p) => powerUpYouGot.opacity = p, )
+											wait(0.1, powerUpYouGot.use(area( { scale: vec2(0) })))
+											
+											powerUpYouGot.execute()
+											
+											wait(0.32, () => {
+												destroy(powerUpYouGot)
+											})
+										})
+									}
+
+									else {
+										loop(6.5, () => {
+											let targetPos = vec2(
+												rand(50, width() - 50),
+												rand(50, height() - 50)
+											)
+											tween(powerUpYouGot.pos, targetPos, 6.5, (p) => powerUpYouGot.pos = p, easings.easeInOutSine)
+										})
+									}
 								})
 							}
 						})
@@ -981,8 +1072,8 @@ export function gamescene() {
 				},
 				
 				update() {
-					// if (scoreMultiplier > 1) this.price = Math.floor(scoreMultiplier * this.basePrice * 0.5)
 					this.text = !GameState.hasUnlockedPowerups ? `Unlock power-ups\n1K` : `Buy random power up\n1M`
+					this.price = !GameState.hasUnlockedPowerups ? 1000 : scoreToAscend / 10
 				}
 			}
 		])
@@ -1034,9 +1125,11 @@ export function gamescene() {
 			})
 
 			element.onMousePress("left", () => {
-				if (element.isHovering() && canClickStuff == true) tween(element.scale, vec2(0.8), 0.35, (p) => element.scale = p, easings.easeOutBounce)
-				if (!mouse.waiting) {
-					mouse.play("grab")
+				if (element.isHovering() && canClickStuff == true) {
+					tween(element.scale, vec2(0.8), 0.35, (p) => element.scale = p, easings.easeOutBounce)
+					if (!mouse.waiting) {
+						mouse.play("grab")
+					}
 				}
 			})
 
@@ -1049,27 +1142,14 @@ export function gamescene() {
 						if (element.is("powerupElement")) {
 							// if has unlocked power ups and you're trying to buy thems checks if canbuy power up is true
 							if (GameState.hasUnlockedPowerups) {
-								if (canBuyPowerup) {
+								if (canBuyPowerup && get("powerup").length < 1) {
 									actuallyBuying(element)
 								}
 
 								// has unlocked them but has just bought one and has to wait again to buy it again
 								// wait cursor
 								else {
-									mouse.play("wait")
-									mouse.waiting = true
-									let l = loop(0.25, () => {
-										mouse.angle += 90
-										if (mouse.angle == 180) mouse.flipY = true
-									})
-
-									wait(1, () => {
-										l.cancel()
-										mouse.play("cursor")
-										mouse.waiting = false
-										mouse.angle = 0
-										mouse.flipY = false
-									})
+									mouse.waitAnim()
 								}
 							}
 
@@ -1080,8 +1160,8 @@ export function gamescene() {
 							}
 						}
 	
-						else if (element.is("cursorElement") && element.canBuyCursors == false) {
-							debug.log("you can't do that yet")
+						else if (element.is("cursorElement") && element.canBuyCursors == false && mouse.waiting == false) {
+							mouse.waitAnim()
 						}
 	
 						else {

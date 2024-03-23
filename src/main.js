@@ -1,5 +1,4 @@
 import kaboom from "kaboom";
-import "kaboom/global";
 
 import { loadAssets } from "./loader.js"
 import { volumeManager } from "./volumebar.js";
