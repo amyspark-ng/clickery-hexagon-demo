@@ -90,7 +90,17 @@ export function gamescene() {
 			"bg"
 		])
 
+		// floor
+		add([
+			rect(width(), 50),
+			pos(center().x, height()),
+			area(),
+			body( { isStatic: true }),
+			anchor("top"),
+		])
+		
 		setCursor("none")
+		setGravity(1600)
 
 		mouse = add([
 			sprite("cursors"),
@@ -149,6 +159,47 @@ export function gamescene() {
 				rotSpeed: 0.010,
 				levitSpeed: 5,
 				click(auto) {
+					for (let i = 0; i < scorePerClick; i++) {
+						let obj = add([
+							pos(
+								rand(0, width() - 10),
+								-20),
+							z(99999),
+							sprite("cursors"),
+							opacity(1),
+							scale(0.5),
+							rotate(0),
+							anchor("center"),
+							area(),
+							body(),
+						])
+
+						onUpdate(() => {
+							if (!obj.isGrounded()) {
+								obj.angle += rand(5, 10)
+							}
+
+							if (!obj.pos.x > width() / 2) {
+								obj.use(area( { scale: vec2(0) }))
+							}
+
+							else {
+								obj.use(area( { scale: vec2(1) }))
+							}
+						})
+
+						obj.onGround(() => {
+							debug.log("grounded")
+							wait(1.25, () => {
+								tween(obj.opacity, 0, 1.25, (p) => obj.opacity = p, )
+								wait(1.25, () => {
+									debug.log("destroyed")
+									destroy(obj)
+								})
+							})
+						})
+					}
+
 					if (auto == true) {
 						// fucking cursor position
 						autoCursor.pos.x = rand(hexagonObj.pos.x - 50, hexagonObj.pos.x + 50)
@@ -194,8 +245,7 @@ export function gamescene() {
 						tween(autoClickAnim.opacity, 1, 0.26, (p) => autoClickAnim.opacity = p, )
 		
 						// score managing and hexagon animations
-						manageScore(GameState.score + GameState.cursors)
-						GameState.maxScore += GameState.score + GameState.cursors
+						manageScore(GameState.score + (GameState.scoreMultiplier * GameState.cursors))
 		
 						// play click
 						tween(vec2(1), vec2(0.96), 0.35, (p) => hexagonObj.scale = p, easings.easeOutBounce)
@@ -263,11 +313,13 @@ export function gamescene() {
 							let plusScoreText = add([
 								text(`+${scorePerClick}`),
 								// pos(rand(mousePos().x - 25, mousePos().x + 25), rand(mousePos().y - 25, mousePos().y + 25)),
-								pos(rand(mousePos().x - 25, mousePos().x + 25), rand(mousePos().y - 25, mousePos().y + 25)),
+								pos(
+									rand(mousePos().x - 25, mousePos().x + 25), 
+									choose([rand(mousePos().y - 25, mousePos().y - 30), rand(mousePos().y + 25, mousePos().y + 30)]),
+								),
 								anchor("center"),
 								rotate(0),
 								opacity(1),
-								// z(9999999999999999999),
 								rotate(rand(-10, 10)),
 								{
 									update() {
@@ -876,8 +928,7 @@ export function gamescene() {
 						tween(autoCursor.pos, center(), 2, (p) => autoCursor.pos = p, )
 
 						wait(2, () => {
-							manageScore(GameState.score + GameState.cursors)
-							GameState.maxScore += GameState.cursors
+							manageScore(GameState.score + (GameState.scoreMultiplier * GameState.cursors))
 							
 							tween(autoPlusScoreText.opacity, 1, 0.25, (p) => autoPlusScoreText.opacity = p, )
 							// play click

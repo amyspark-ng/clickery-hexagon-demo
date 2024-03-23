@@ -13,6 +13,10 @@ it will set a  random timer of 2 to 10 minutes and the next one will do the same
 
 [] the store should do a little shaky anim when clicked on it would be cool
 
+[] Arreglar max score al parecer
+
+[] particulas
+
 [] Levitacion
 - ya lajbel le esta haciendo ahi
 

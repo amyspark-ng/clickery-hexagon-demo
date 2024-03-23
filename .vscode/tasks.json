@@ -2,25 +2,20 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			// For this to work you need to have installed 7z
+			// Needs 7zip
 			"label": "— Build Kaboom",
 			"type": "shell",
-			"command": "pnpm build",
+			"command": "pnpm build ; 7z a -tzip ./build.zip ./www",
 			"group": {
 				"kind": "build",
 			}
 		},
 		{
 			// This runs the pnpm build and then runs the butler to send it to itch.io
-			"label": "Deliver kaboom to Itch.io",
+			// Needs 7zip
+			"label": "— Deliver kaboom to Itch.io",
 			"type": "shell",
-			"command": "butler push export amyspark-ng/clickery-hexagon-2:html5 --userversion 1.0",
-		},
-		{
-			// This runs the pnpm build and then runs the butler to send it to itch.io
-			"label": "Deliver kaboom to Itch.io",
-			"type": "shell",
-			"command": "pnpm build && butler push export amyspark-ng/clickery-hexagon-2:html5 --userversion 1.0",
+			"command": "pnpm build ; 7z a -tzip ./build.zip ./www ; butler push build.zip amyspark-ng/clickery-hexagon-2:html5 --userversion 1.0",
 		},
 	]
 }
