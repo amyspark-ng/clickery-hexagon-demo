@@ -36,3 +36,13 @@ loadAssets();
 
 go("menuscene");
 // go("gamescene")
+
+// bg - 0
+// thingies - 1
+// ui/Text/store/buttons - 2
+// hexagon - 3
+// storeBlack - 4
+// storeThings - 5
+// storeOptions - 6+
+// vignette - 7
+// cursor = 999999999

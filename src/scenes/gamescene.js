@@ -12,14 +12,10 @@ export let scorePerClick = 1;
 export let hasStartedGame = false;
 let ominus;
 
-let timeBetweenAutos = 60;
-let autoChance = 0.05;
-// let timeBetweenAutos = 5
-// let autoChance = 0.5
-
 // game managinig variables
 let storeOpen = false;
 let canClickHexagon = false;
+let canActuallyClickHexagon = false;
 
 // used to determine the game juice pitch at buying things thingy
 let hasClicked = false;
@@ -36,6 +32,12 @@ let millionsForLevitSpeed = 0;
 let scoreToAscend = 1000000;
 
 let dataToSave;
+
+// totally not anti cheat
+let constTimeTilClick = 37/1000
+// let constTimeTilClick = 1
+let timeTilClick = constTimeTilClick
+let isWaitingToClick = false
 
 function settingData() {
 	dataToSave = {
@@ -57,6 +59,14 @@ export function setCanClickStuff(value) {
 	canClickStuff = value;
 }
 
+function percentage(number, percentageTo) {
+	return (number * percentageTo) / 100
+}
+
+function priceFormula(basePrice, percentageIncrease, objectAmount, isMultiplier) {
+	return Math.round((basePrice + (percentage(basePrice, percentageIncrease) * isMultiplier ? objectAmount : objectAmount - 1)))
+}
+
 // TODO: Re work power ups
 // TODO: Menu scene transitions
 // TODO: Menuscene
@@ -73,6 +83,8 @@ let spsText;
 let multiplierText;
 let cursorsText;
 
+// GRRRRR
+
 export function gamescene() {
 	return scene("gamescene", () => {
 		if (GameState.hasUnlockedPowerups == true) canBuyPowerup = true;
@@ -84,18 +96,9 @@ export function gamescene() {
 			// color(50, 50, 50),
 			color(50, 50, 50),
 			stay(),
-			// z(-1),
+			z(0),
 			anchor("center"),
 			"bg",
-		]);
-
-		// floor
-		add([
-			rect(width(), 50),
-			pos(center().x, height()),
-			area(),
-			body({ isStatic: true }),
-			anchor("top"),
 		]);
 
 		setCursor("none");
@@ -105,7 +108,8 @@ export function gamescene() {
 			sprite("cursors"),
 			pos(mousePos()),
 			rotate(0),
-			area({ scale: vec2(0.5), offset: vec2(0, -20) }),
+			area(),
+			//   area({ scale: vec2(0.5), offset: vec2(0, -20) }),
 			anchor("center"),
 			z(9999999999),
 			opacity(1),
@@ -143,7 +147,7 @@ export function gamescene() {
 		// #region Hexagon Stuff
 		hexagonObj = add([
 			sprite("hexagon"),
-			pos(width() / 2, height() / 2 + 40),
+			pos(width() / 2, height() / 2 + 50),
 			anchor("center"),
 			scale(1),
 			color(WHITE),
@@ -159,59 +163,68 @@ export function gamescene() {
 				]),
 				offset: vec2(-512, -289),
 			}),
+
 			rotate(),
 			"hexagon",
 			{
 				// hoverSize: 1.01,
 				// pressSize: 0.96,
-				verPosition: height() / 2 + 40, // 328
+				verPosition: height() / 2 + 50, // 328
+				thingiesPerClick: 0,
 				rotSpeed: 0.010,
 				levitSpeed: 5,
 				click(auto) {
-					for (let i = 0; i < scorePerClick; i++) {
-						let obj = add([
-							pos(
-								rand(0, width() - 10),
-								-20,
-							),
-							z(99999),
-							sprite("cursors"),
-							opacity(1),
-							scale(0.5),
-							rotate(0),
-							anchor("center"),
-							area(),
-							body(),
-						]);
-
-						onUpdate(() => {
-							if (!obj.isGrounded()) {
-								obj.angle += rand(5, 10);
-							}
-
-							if (!obj.pos.x > width() / 2) {
-								obj.use(area({ scale: vec2(0) }));
-							} else {
-								obj.use(area({ scale: vec2(1) }));
-							}
-						});
-
-						obj.onGround(() => {
-							debug.log("grounded");
-							wait(1.25, () => {
-								tween(
-									obj.opacity,
-									0,
-									1.25,
-									(p) => obj.opacity = p,
-								);
-								wait(1.25, () => {
-									debug.log("destroyed");
-									destroy(obj);
-								});
-							});
-						});
-					}
+					// for (let i = 0; i < this.thingiesPerClick; i++) {
+					// 	if (GameState.score > 1000 && GameState.hasUnlockedPowerups) {
+					// 		wait(rand(0.1, 0.5), () => {
+					// 		let obj = add([
+					// 			pos(
+					// 			rand(0, width() - 10),
+					// 			-20,
+					// 			),
+								// z(1),
+					// 			sprite("hexagon"),
+					// 			opacity(0.9),
+					// 			scale(0.1),
+					// 			rotate(0),
+					// 			anchor("center"),
+					// 			// area(),
+					// 			// body(),
+					// 		]);
+	
+					// 		tween(
+					// 			obj.pos.y,
+					// 			height(),
+					// 			2.5,
+					// 			(p) => obj.pos.y = p,
+					// 		);
+	
+					// 		wait(1.25, () => {
+					// 		tween(
+					// 			obj.opacity,
+					// 			0,
+					// 			1,
+					// 			(p) => obj.opacity = p,
+					// 		);
+	
+					// 			wait(1, () => {
+					// 				destroy(obj);
+					// 			});
+					// 		});
+	
+					// 			onUpdate(() => {
+					// 			obj.angle += rand(1, 2.5);
+					// 		// }
+	
+					// 			// if (!obj.pos.x > width() / 2) {
+					// 			//   obj.use(area({ scale: vec2(0) }));
+					// 			// } else {
+					// 			//   obj.use(area({ scale: vec2(1) }));
+					// 			// }
+					// 			});
+					// 		});
+					// 	}
+					// }
 
 					if (auto == true) {
 						// fucking cursor position
@@ -308,6 +321,7 @@ export function gamescene() {
 							GameState.score
 								+ (GameState.scoreMultiplier
 									* GameState.cursors),
+							GameState.scoreMultiplier * GameState.cursors,
 						);
 
 						// play click
@@ -414,11 +428,10 @@ export function gamescene() {
 						}
 
 						if (!storeOpen) {
-							manageScore(GameState.score += scorePerClick);
-							// manageScore(score += 10000)
-
-							GameState.maxScore += scorePerClick;
-
+							manageScore(
+								GameState.score += scorePerClick,
+								scorePerClick,
+							);
 							play("clickRelease", {
 								detune: rand(-200, 200),
 							});
@@ -460,12 +473,12 @@ export function gamescene() {
 									rand(mousePos().x - 25, mousePos().x + 25),
 									choose([
 										rand(
-											mousePos().y - 25,
-											mousePos().y - 30,
+											mousePos().y - 10,
+											mousePos().y - 15,
 										),
 										rand(
-											mousePos().y + 25,
-											mousePos().y + 30,
+											mousePos().y + 10,
+											mousePos().y + 15,
 										),
 									]),
 								),
@@ -561,7 +574,8 @@ export function gamescene() {
 
 		hexagonObj.onMousePress("left", () => {
 			if (hexagonObj.isHovering()) {
-				if (canClickHexagon && !storeOpen && canClickStuff) {
+				// if (canClickHexagon && !storeOpen && canClickStuff) {
+				if (canClickHexagon && timeTilClick < 0 && !storeOpen && canClickStuff) {
 					cps += GameState.scoreMultiplier;
 					tween(
 						vec2(1),
@@ -582,7 +596,9 @@ export function gamescene() {
 
 		hexagonObj.onMouseRelease("left", () => {
 			if (hexagonObj.isHovering()) {
-				if (canClickHexagon == true && !storeOpen && canClickStuff) {
+				if (canClickHexagon && !isWaitingToClick && !storeOpen && canClickStuff) {
+					timeTilClick = constTimeTilClick
+					isWaitingToClick = true
 					hexagonObj.click();
 					if (!mouse.waiting) {
 						mouse.play("point");
@@ -641,7 +657,7 @@ export function gamescene() {
 
 		/*
 		// TODO: Fix floating
-		// floating
+		// levitating
 		hexagonObj.onStateEnter("down", () => {
 			tween(hexagonObj.verPosition, hexagonObj.verPosition + 10, hexagonObj.levitSpeed, (p) => hexagonObj.verPosition = p)
 			tween(hexagonObj.pos.y, hexagonObj.verPosition, hexagonObj.levitSpeed, (p) => hexagonObj.pos.y = p)
@@ -675,7 +691,7 @@ export function gamescene() {
 			scale(2),
 			{
 				update() {
-					this.text = formatScore(Math.floor(GameState.score));
+					this.text = formatScore(Math.round(GameState.score));
 				},
 			},
 		]);
@@ -691,7 +707,7 @@ export function gamescene() {
 			scale(0.6),
 			{
 				update() {
-					this.text = formatScore(GameState.maxScore);
+					this.text = formatScore(Math.round(GameState.maxScore));
 				},
 			},
 		]);
@@ -819,8 +835,31 @@ export function gamescene() {
 			}
 		});
 
-		function manageScore(newScore) {
+
+		// this is 60 * 5
+		wait(60 * 5, () => {
+			loop(60 * 5, () => {
+				if (GameState.hasUnlockedPowerups) {
+					powerups = definePowerups();
+					powerups = shuffleArray(powerups);
+					spawnPowerUp(shuffleArray(powerups)[0], false);
+				}
+			});
+		})
+
+		// wait(1, () => {
+		// 	loop(1, () => {
+		// 		if (GameState.hasUnlockedPowerups) {
+		// 			powerups = definePowerups();
+		// 			powerups = shuffleArray(powerups);
+		// 			spawnPowerUp(shuffleArray(powerups)[0], false);
+		// 		}
+		// 	});
+		// })
+
+		function manageScore(newScore, maxScoreAmount) {
 			GameState.score = newScore;
+			GameState.maxScore += maxScoreAmount;
 		}
 
 		loop(3, () => {
@@ -909,10 +948,10 @@ export function gamescene() {
 		store.onHover(() => {
 			tween(
 				vec2(1),
-				vec2(1.05),
+				vec2(1.09),
 				0.35,
 				(p) => store.scale = p,
-				easings.easeOutQuart,
+				// easings.easeOutQuart,
 			);
 			if (!mouse.waiting) {
 				mouse.play("point");
@@ -950,6 +989,34 @@ export function gamescene() {
 		store.onMouseRelease("left", () => {
 			if (store.isHovering()) {
 				store.manage();
+
+				tween(
+					0,
+					-12,
+					0.1,
+					(p) => store.angle = p,
+					easings.easeinoutback,
+				);
+				wait(0.1, () => {
+					tween(
+						0,
+						12,
+						0.1,
+						(p) => store.angle = p,
+						easings.easeinoutback,
+					);
+
+					wait(0.1, () => {
+						tween(
+							store.angle,
+							0,
+							0.1,
+							(p) => store.angle = p,
+							easings.easeinoutback,
+						);
+					});
+				});
+
 				play("open_store");
 				if (!mouse.waiting) {
 					mouse.play("point");
@@ -974,20 +1041,25 @@ export function gamescene() {
 			if (GameState.score == 0) hexagonObj.rotSpeed = 0.01;
 			else {
 				if (hexagonObj.isHovering()) {
+					canClickHexagon = true
 					if (hexagonObj.rotSpeed < 18.75) {
 						changeOfRotSpeedPerScore = (18.75 - 0.01)
 							/ scoreToAscend;
 						hexagonObj.rotSpeed = 0.01
 							+ changeOfRotSpeedPerScore * GameState.score;
 					}
-				} else {
+				} 
+				
+				else {
+					canClickHexagon = false
 					if (hexagonObj.rotSpeed < 15) {
 						changeOfRotSpeedPerScore = (15 - 0.01) / scoreToAscend;
-						hexagonObj.rotSpeed = 0.01
-							+ changeOfRotSpeedPerScore * GameState.score;
+						hexagonObj.rotSpeed = 0.01 + changeOfRotSpeedPerScore * GameState.score;
 					}
 				}
 			}
+
+			hexagonObj.thingiesPerClick = Math.round(1 + ((4 - 1) / scoreToAscend) * GameState.score)
 
 			hexagonObj.angle += hexagonObj.rotSpeed;
 
@@ -1007,6 +1079,13 @@ export function gamescene() {
 			sps = GameState.cursors / 10 + cps;
 			sps = sps.toFixed(1);
 
+			if (timeTilClick > 0) {
+				timeTilClick -= dt()
+			}
+			else if (isWaitingToClick) {
+				isWaitingToClick = false
+			}
+
 			// game juice for the shop thing
 			storePitchSeconds += dt();
 			if (storePitchSeconds > 0.5) {
@@ -1017,7 +1096,9 @@ export function gamescene() {
 
 		// debug
 		let cheat = true;
-		// debug.inspect = true
+		onKeyPress("tab", () => {
+			debug.inspect = !debug.inspect;
+		});
 
 		// manageScore(1000000000)
 
@@ -1030,9 +1111,14 @@ export function gamescene() {
 		});
 
 		onKeyPress("e", () => {
-			canBuyPowerup = true;
-			debug.log("can buy powerups");
-			debug.log(canBuyPowerup);
+			spawnPowerUp({
+				pos: vec2(),
+				bought: false,
+				firstTime: false,
+				choose: false,
+				excludeBad: false
+			})
+			
 		});
 
 		onKeyDown("left", () => {
@@ -1209,6 +1295,15 @@ export function gamescene() {
 			},
 		]);
 
+		// storeUI.add([
+		// 	pos(20, 20),
+		// 	sprite("storerec"),
+		// 	anchor("center"),
+		// 	area(),
+		// 	scale(),
+		// 	color(),
+		// ])
+
 		// auto curosrs
 		storeUI.add([
 			pos(10, 50),
@@ -1253,6 +1348,7 @@ export function gamescene() {
 								GameState.score
 									+ (GameState.scoreMultiplier
 										* GameState.cursors),
+								GameState.scoreMultiplier * GameState.cursors,
 							);
 
 							tween(
@@ -1390,23 +1486,14 @@ export function gamescene() {
 						});
 					} else {
 						GameState.cursors++;
-						this.price = GameState.cursors != 0
-							? this.price = Math.round(
-								GameState.cursors * this.basePrice * 0.6,
-							)
-							: 25;
 					}
 				},
 
 				update() {
+					this.price = priceFormula(25, 15, GameState.cursors, true)
 					this.text = `Cursor (${GameState.cursors + 1})\n$${
 						formatPrice(this.price)
 					}`;
-					this.price = GameState.cursors != 0
-						? this.price = Math.round(
-							GameState.cursors * this.basePrice * 0.6,
-						)
-						: 25;
 				},
 			},
 		]);
@@ -1482,7 +1569,9 @@ export function gamescene() {
 							spawnPowerUp(shuffleArray(powerups)[0], false);
 							powerups = definePowerups();
 						});
-					} // has
+					} 
+
+					// has
 					else {
 						powerups = shuffleArray(powerups);
 						canBuyPowerup = false;
@@ -1494,11 +1583,11 @@ export function gamescene() {
 						let timesItSwitched = 0;
 
 						let whatPowerUpWillYouGet = add([
-							sprite("hexagon"),
-							color(WHITE),
-							pos(this.pos.x + 700, this.pos.y + 50),
+							sprite("powerups", {
+								anim: 0
+							}),
+							pos(this.pos.x + 900, this.pos.y + 100),
 							area(),
-							scale(0.25),
 						]);
 
 						let timeUntilSwitch = 0.1;
@@ -1510,19 +1599,16 @@ export function gamescene() {
 							if (timesSwitched < 50) {
 								powerUpIndex++;
 								if (powerUpIndex > 3) powerUpIndex = 0;
-								whatPowerUpWillYouGet.color =
-									powerups[powerUpIndex].color;
+								whatPowerUpWillYouGet.play(powerups[powerUpIndex].name)
 							}
 
-							if (timesSwitched == 30) timeUntilSwitch = 3;
-							if (timesSwitched == 20) {
+							play("slot")
+
+							if (timesSwitched == 20) timeUntilSwitch = 3;
+							if (timesSwitched == 30) {
 								loopy.cancel();
 
-								let powerUpYouGot = spawnPowerUp(
-									powerups[powerUpIndex],
-									whatPowerUpWillYouGet.pos,
-									true,
-								);
+								let powerUpYouGot = spawnPowerUp(powerups[powerUpIndex], whatPowerUpWillYouGet.pos, true,);
 								destroy(whatPowerUpWillYouGet);
 
 								wait(rand(120, 600), () => {
@@ -1533,59 +1619,11 @@ export function gamescene() {
 										false,
 									);
 								});
-
-								wait(0.8, () => {
-									if (powerUpYouGot.is("bad")) {
-										tween(
-											powerUpYouGot.pos,
-											center(),
-											3.25,
-											(p) => powerUpYouGot.pos = p,
-											easings.easeInOutSine,
-										);
-
-										wait(3.25, () => {
-											tween(
-												1,
-												0,
-												0.32,
-												(p) =>
-													powerUpYouGot.opacity = p,
-											);
-											wait(
-												0.1,
-												powerUpYouGot.use(
-													area({ scale: vec2(0) }),
-												),
-											);
-
-											powerUpYouGot.execute();
-
-											wait(0.32, () => {
-												destroy(powerUpYouGot);
-											});
-										});
-									} else {
-										loop(6.5, () => {
-											let targetPos = vec2(
-												rand(50, width() - 50),
-												rand(50, height() - 50),
-											);
-											tween(
-												powerUpYouGot.pos,
-												targetPos,
-												6.5,
-												(p) => powerUpYouGot.pos = p,
-												easings.easeInOutSine,
-											);
-										});
-									}
-								});
 							}
 						});
 					}
 
-					// this.price = Math.floor(scoreMultiplier * this.basePrice * 0.5)
+					// this.price = Math.round(scoreMultiplier * this.basePrice * 0.5)
 				},
 
 				update() {
@@ -1601,12 +1639,10 @@ export function gamescene() {
 
 		children = storeUI.get("*", { recursive: true });
 
-		children[0].price = GameState.scoreMultiplier == 1
-			? 25
-			: Math.floor(
-				children[0].price
-					+ children[0].price * GameState.scoreMultiplier / 10,
-			);
+		children[0].price = GameState.scoreMultiplier == 1 ? 25 : Math.round(
+			children[0].price
+				+ children[0].price * GameState.scoreMultiplier / 10,
+		);
 
 		function actuallyBuying(element) {
 			tween(
@@ -1619,8 +1655,8 @@ export function gamescene() {
 			if (GameState.score >= element.price) {
 				// reduces score to price cool animation
 				tween(
-					Math.floor(GameState.score),
-					Math.floor(GameState.score - element.price),
+					Math.round(GameState.score),
+					Math.round(GameState.score - element.price),
 					0.25,
 					(p) => GameState.score = p,
 				);

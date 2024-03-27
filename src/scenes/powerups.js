@@ -12,65 +12,88 @@ let AddPercentage;
 let OtherPowerUp;
 
 let powerups = [
-	badPowerUp,
 	MultiplyScoreMultiplier,
 	AddPercentage,
 	OtherPowerUp,
 ];
 
-export function spawnPowerUp(powerup, posToAdd = vec2(10000, 10000), bought) {
-	let thePowerup = add(powerup);
-
-	// wasnt bought
-	if (!bought) {
-		// isnt bad
-		if (!thePowerup.is("bad")) {
-			thePowerup.pos = vec2(
-				choose([-75, width() + 75]),
-				choose([-75, height() + 75]),
-			);
-			let targetPos = center();
-
-			let speed = 6.5;
-
-			wait(speed, () => {
-				loop(speed, () => {
-					targetPos = vec2(
-						rand(50, width() - 50),
-						rand(50, height() - 50),
-					);
-					tween(
-						thePowerup.pos,
-						targetPos,
-						speed,
-						(p) => thePowerup.pos = p,
-						easings.easeInOutSine,
-					);
-				});
-			});
-			tween(
-				thePowerup.pos,
-				targetPos,
-				speed,
-				(p) => thePowerup.pos = p,
-				easings.easeInOutSine,
-			);
-		}
-	} else {
-		thePowerup.pos = posToAdd;
+function checkBounce(object) {
+	// detects bounce toñoñon
+	if (object.pos.x <= -10 || object.pos.x >= width() - object.width + 10) {
+		object.vel.x = -object.vel.x + rand(-0.5, 0.5)
+		object.speed += 10
+		return true;
+	}
+	
+	if (object.pos.y <= -10 || object.pos.y >= height() - object.height + 10) {
+		object.vel.y = -object.vel.y + rand(-0.5, 0.5)
+		object.speed += 10
+		return true;
 	}
 
-	thePowerup.canClick = true;
+	if (object.speed > 300) {
+		debug.log("you lost powerup privileges")
+	}
+}
 
-	// reset values because what the fuck
-	thePowerup.opacity = 1;
-	thePowerup.use(area());
-	thePowerup.scale = vec2(0.25);
+// what the fuck does choose mean
+export function spawnPowerUp(spawnOptions = { pos: vec2(), bought: false, firstTime: false, choose: true, excludeBad: false }) {
+	let thePowerup;
+	
+	if (!spawnOptions.excludeBad) {
+		// you got the bad one dude
+		if (chance(0.1)) {
+		// if (chance(1)) {
+			thePowerup = add(badPowerUp)
+		}
 
-	if (!thePowerup.is("bad")) {
+		else {
+			thePowerup = add(shuffleArray(powerups)[0])
+		}
+	}
+
+	else {
+		thePowerup = add(shuffleArray(powerups)[0])
+	}
+
+	// defining powerup things
+	thePowerup.play(thePowerup.name)
+	thePowerup.use(area( { scale: vec2(0.9) }))
+	
+	thePowerup.vel = Vec2.fromAngle(rand((rand(-50, 50)), rand(-50, 50)))
+	thePowerup.speed = 100
+	thePowerup.insideScreen = false
+	let chosenCorner;
+	
+	// artificial one
+	if (spawnOptions.bought) {
+		thePowerup.pos = spawnOptions.pos
+	}
+
+	// natural spawning / homemade
+	else {
+		wait(5, () => {
+			thePowerup.insideScreen = true
+		})
+	}
+
+	if (thePowerup.is("bad")) {
+		thePowerup.use(anchor("center"))
+		wait(1, () => {
+			tween(thePowerup.pos, center(), 2, (p) => thePowerup.pos = p, )
+		})
+	}
+	
+	else {
 		thePowerup.onUpdate(() => {
-			setCanClickStuff(!thePowerup.isHovering());
-		});
+			// const dir = thePowerup.pos.sub(vec2(chosenCorner.x, chosenCorner.y)).unit()
+			const dir = thePowerup.pos.sub(center(9)).unit()
+			thePowerup.move(dir.scale(thePowerup.speed))
+		
+			if (thePowerup.insideScreen) {
+				checkBounce(thePowerup)
+			}
+		})
 
 		thePowerup.onHover(() => {
 			if (!mouse.waiting) {
@@ -89,8 +112,8 @@ export function spawnPowerUp(powerup, posToAdd = vec2(10000, 10000), bought) {
 				setCanClickStuff(false);
 				thePowerup.canClick = false;
 				tween(
-					vec2(0.25),
-					vec2(0.196),
+					vec2(1),
+					vec2(0.896),
 					0.35,
 					(p) => thePowerup.scale = p,
 					easings.easeOutBounce,
@@ -102,6 +125,7 @@ export function spawnPowerUp(powerup, posToAdd = vec2(10000, 10000), bought) {
 
 		thePowerup.onMouseRelease(() => {
 			if (thePowerup.isHovering()) {
+				play("powerup")
 				tween(1, 0, 0.32, (p) => thePowerup.opacity = p);
 				if (!mouse.waiting) mouse.play("cursor");
 
@@ -112,8 +136,8 @@ export function spawnPowerUp(powerup, posToAdd = vec2(10000, 10000), bought) {
 					setCanClickStuff(true);
 
 					thePowerup.execute();
-
-					if (!bought) {
+					
+					if (!spawnOptions.bought) {
 						wait(rand(120, 600), () => {
 							powerups = shuffleArray(powerups);
 							let theOne = spawnPowerUp(
@@ -126,69 +150,36 @@ export function spawnPowerUp(powerup, posToAdd = vec2(10000, 10000), bought) {
 				});
 			}
 		});
-	} // it is bad
-	else {
-		// checks if it was bought or spawned
-		if (!bought) {
-			thePowerup.pos = vec2(
-				choose([-75, width() + 75]),
-				choose([-75, height() + 75]),
-			);
-			tween(
-				thePowerup.pos,
-				center(),
-				3.25,
-				(p) => thePowerup.pos = p,
-				easings.easeInOutSine,
-			);
-			wait(3.25, () => {
-				tween(1, 0, 0.32, (p) => thePowerup.opacity = p);
-				wait(0.1, thePowerup.use(area({ scale: vec2(0) })));
-				wait(0.32, () => {
-					destroy(thePowerup);
-				});
-
-				wait(rand(120, 600), () => {
-					powerups = shuffleArray(powerups);
-					let theOne = spawnPowerUp(
-						shuffleArray(powerups)[0],
-						center(),
-						false,
-					);
-				});
-			});
-		} // it was bought
-		else {
-			thePowerup.pos = posToAdd;
-		}
 	}
 
 	return thePowerup;
 }
 
 export function definePowerups() {
+	let vignetteTemp = make([
+		sprite("vignette"),
+		pos(center()),
+		opacity(0),
+		anchor("center"),
+		color(WHITE),
+		"vignette",
+	])
+	
 	badPowerUp = make([
-		sprite("hexagon"),
+		sprite("powerups"),
 		pos(10, 10),
-		color(RED),
 		area(),
 		opacity(1),
-		anchor("center"),
-		scale(0.25),
+		,
 		"powerup",
 		"bad",
 		{
+			name: "bad",
+			vigColor: RED,
 			execute() {
-				let vignette = add([
-					sprite("vignette"),
-					pos(center()),
-					opacity(0),
-					anchor("center"),
-					color(WHITE),
-					"vignette",
-				]);
+				let vignette = add(vignetteTemp);
 
-				vignette.color = rgb(this.color);
+				vignette.color = rgb(this.vigColor);
 				tween(vignette.opacity, 1, 0.32, (p) => vignette.opacity = p);
 
 				GameState.scoreMultiplier = GameState.scoreMultiplier / 2;
@@ -216,26 +207,19 @@ export function definePowerups() {
 	]);
 
 	MultiplyScoreMultiplier = make([
-		sprite("hexagon"),
+		sprite("powerups"),
 		pos(10, 10),
-		color(BLUE),
 		opacity(1),
 		area(),
-		anchor("center"),
-		scale(0.25),
+		,
 		"powerup",
 		{
+			name: "multiplier",
+			vigColor: BLUE,
 			execute() {
-				let vignette = add([
-					sprite("vignette"),
-					pos(center()),
-					opacity(0),
-					anchor("center"),
-					color(WHITE),
-					"vignette",
-				]);
+				let vignette = add(vignetteTemp);
 
-				vignette.color = rgb(this.color);
+				vignette.color = rgb(this.vigColor);
 				tween(vignette.opacity, 1, 0.32, (p) => vignette.opacity = p);
 
 				GameState.scoreMultiplier = GameState.scoreMultiplier * 2;
@@ -262,26 +246,19 @@ export function definePowerups() {
 	]);
 
 	AddPercentage = make([
-		sprite("hexagon"),
+		sprite("powerups"),
 		pos(10, 10),
-		color(GREEN),
 		opacity(1),
 		area(),
-		anchor("center"),
-		scale(0.25),
+		,
 		"powerup",
 		{
+			name: "percentage",
+			vigColor: GREEN,
 			execute() {
-				let vignette = add([
-					sprite("vignette"),
-					pos(center()),
-					opacity(0),
-					anchor("center"),
-					color(WHITE),
-					"vignette",
-				]);
+				let vignette = add(vignetteTemp);
 
-				vignette.color = rgb(this.color);
+				vignette.color = rgb(this.vigColor);
 				tween(vignette.opacity, 1, 0.32, (p) => vignette.opacity = p);
 
 				tween(
@@ -318,26 +295,19 @@ export function definePowerups() {
 	]);
 
 	OtherPowerUp = make([
-		sprite("hexagon"),
+		sprite("powerups"),
 		pos(10, 10),
-		color(YELLOW),
 		opacity(1),
 		area(),
-		anchor("center"),
-		scale(0.25),
+		,
 		"powerup",
 		{
+			name: "yellow",
+			vigColor: YELLOW,
 			execute() {
-				let vignette = add([
-					sprite("vignette"),
-					pos(center()),
-					opacity(0),
-					anchor("center"),
-					color(WHITE),
-					"vignette",
-				]);
+				let vignette = add(vignetteTemp);
 
-				vignette.color = rgb(this.color);
+				vignette.color = rgb(this.vigColor);
 				tween(vignette.opacity, 1, 0.32, (p) => vignette.opacity = p);
 
 				debug.log("Does some other thing");
@@ -359,7 +329,6 @@ export function definePowerups() {
 	]);
 
 	powerups = [
-		badPowerUp,
 		MultiplyScoreMultiplier,
 		AddPercentage,
 		OtherPowerUp,
