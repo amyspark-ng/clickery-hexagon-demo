@@ -15,7 +15,7 @@
 			// Needs 7zip
 			"label": "— Deliver kaboom to Itch.io",
 			"type": "shell",
-			"command": "pnpm build ; 7z a -tzip ./build.zip ./www ; butler push build.zip amyspark-ng/clickery-hexagon-2:html5 --userversion 1.0"
+			"command": "pnpm build ; 7z a -tzip ./build.zip ./www ; butler push build.zip amyspark-ng/clickery-hexagon-demo:html5 --userversion 1.0"
 		}
 	]
 }

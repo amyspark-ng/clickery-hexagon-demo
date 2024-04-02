@@ -1,4 +1,5 @@
-import { gamescene } from "./scenes/gamescene.js";
+import { gamescene } from "./scenes/game/gamescene.js";
+import { introScene } from "./scenes/introScene.js";
 import { menuscene } from "./scenes/menuscene.js";
 
 export function loadAssets() {
@@ -18,11 +19,26 @@ export function loadAssets() {
 	loadSound("slot", "sounds/slot.wav");
 	loadSound("powerup", "sounds/powerUp.wav");
 	loadSound("badpower", "sounds/badpower.wav");
+	loadSound("gotpowerup", "sounds/powerup.mp3");
 
 	loadSound("saving", "sounds/saving.mp3")
+	loadSprite("light", "sprites/light.png")
+	
+	loadSprite("amyspark", "sprites/amulogo.png", {
+		sliceX: 9,
+		anims: {
+			"run": {
+				from: 0,
+				to: 8,
+				speed: 15,
+				loop: true
+			}
+		}
+	})
 
 	loadSound("ominus", "sounds/ominus.mp3");
 	loadSound("game_music", "sounds/game_music.mp3");
+	loadSound("bigswitch", "sounds/bigswitch.mp3");
 
 	loadSprite("cursors", "sprites/cursors.png", {
 		sliceX: 5,
@@ -60,13 +76,22 @@ export function loadAssets() {
 	loadSprite("auto_click", "sprites/auto_click.png");
 	loadSprite("floppy", "sprites/floppy.png");
 	loadSprite("vignette", "sprites/vignette.png");
+	loadSprite("thingy", "sprites/thingy.png");
+
+	loadSprite("TextBox", "sprites/TextBox.png")
+	loadSprite("TextButton", "sprites/TextButton.png")
+	loadSprite("NewgroundsTextBox", "sprites/NewgroundsTextBox.png")
+	loadSprite("NewgroundsTextBoxButton", "sprites/NewgroundsTextBoxButton.png")
 
 	loadFont("apl386", "https://kaboomjs.com/examples/fonts/apl386.ttf", {
 		outline: 4,
 		filter: "linear",
 	});
 
+	// loadBitmapFont("apl386_bitmap", "/apl386_1.bmp", 6, 8)
+
 	// scenes
+	introScene();
 	gamescene();
 	menuscene();
 }
